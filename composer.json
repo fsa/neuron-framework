@@ -1,0 +1,20 @@
+{
+    "name": "fsa/neuron",
+    "description": "PHP Framework",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "FSA\\Neuron\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Sergei Fedotov",
+            "email": "fsa@tavda.info"
+        }
+    ],
+    "require": {
+        "php": "^7.4||^8.0",
+        "ext-redis": "^5.3"
+    }
+}
