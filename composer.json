@@ -2,17 +2,18 @@
     "name": "fsa/neuron-php",
     "description": "Neuron PHP framework",
     "type": "library",
-    "autoload": {
-        "psr-4": {
-            "FSA\\Neuron\\": "src/"
-        }
-    },
     "authors": [
         {
             "name": "Sergei Fedotov",
             "email": "fsa@tavda.info"
         }
     ],
+    "license": "GPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "FSA\\Neuron\\": "src/"
+        }
+    },
     "require": {
         "php": "^7.4||^8.0",
         "ext-redis": "^5.3"
