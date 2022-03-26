@@ -1,6 +1,6 @@
 {
-    "name": "fsa/neuron",
-    "description": "PHP Framework",
+    "name": "fsa/neuron-php",
+    "description": "Neuron PHP framework",
     "type": "library",
     "autoload": {
         "psr-4": {
