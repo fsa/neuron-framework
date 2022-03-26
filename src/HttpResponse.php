@@ -25,17 +25,13 @@ class HttpResponse {
     private static $etag;
     private static $message_id;
 
-    private static $templates=[
-        'main'=>'\\Templates\\ContentPage',
-        'message'=>'\\Templates\\Message',
-        'login'=>'\\Templates\\Login',
-    ];
+    private static $template_namespace='\\Templates';
 
     # Ответ HTML
 
     public static function getTemplate() {
         if (is_null(self::$template)) {
-            self::$template=new self::$templates['main'];
+            self::$template=new (self::$template_namespace.'\\Main');
         }
         return self::$template;
     }
@@ -101,7 +97,7 @@ class HttpResponse {
     }
 
     public static function showLoginForm(string $redirect_url=null) {
-        $template=new self::$templates['login'];
+        $template=new (self::$template_namespace.'\\Login');
         $template->title='Вход в систему';
         $template->context=self::$context;
         if ($redirect_url) {
@@ -132,7 +128,7 @@ class HttpResponse {
     }
 
     public static function showMessagePage(string $message, string $title, string $style=null) {
-        $template=new self::$templates['message'];
+        $template=new (self::$template_namespace.'\\Message');
         $template->style=$style;
         $template->title=$title;
         $template->context=self::$context;
@@ -290,7 +286,10 @@ class HttpResponse {
 
     # Подключение обработчиков ошибок
 
-    public static function setHtmlMode(array $context=null) {
+    public static function setHtmlMode(array $context=null, string $template_namespace=null) {
+        if($template_namespace) {
+            self::$template_namespace=$template_namespace;
+        }
         self::$context=$context;
         set_exception_handler([__CLASS__, 'HtmlPageException']);
     }
