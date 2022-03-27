@@ -1,5 +1,7 @@
 <?php
 
+namespace FSA\Neuron;
+
 class DB {
 
     private static $pdo=null;
@@ -13,19 +15,19 @@ class DB {
         
     }
 
-    public static function getInstance(): PDO {
+    public static function getInstance(): \PDO {
         if (self::$pdo) {
             return self::$pdo;
         }
         $dburl=getenv('DATABASE_URL');
         if (!$dburl) {
-            throw new UserException('Database is not configured.');
+            throw new AppException('Database is not configured.');
         }
         $db=parse_url($dburl);
-        self::$pdo=new PDO("pgsql:".sprintf(
+        self::$pdo=new \PDO("pgsql:".sprintf(
                 "host=%s;port=%s;user=%s;password=%s;dbname=%s",
                 $db["host"], $db["port"]??5432, $db["user"], $db["pass"], ltrim($db["path"], "/")));
-        self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        self::$pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $tz=getenv('TZ');
         if ($tz) {
             self::$pdo->query("SET TIMEZONE=\"$tz\"");
@@ -41,7 +43,7 @@ class DB {
         $keys=array_keys($values);
         $stmt=self::prepare('INSERT INTO '.$table.' ('.join(',', $keys).') VALUES (:'.join(',:', $keys).') RETURNING '.$index);
         $stmt->execute($values);
-        return $stmt->fetch(PDO::FETCH_COLUMN);
+        return $stmt->fetchColumn();
     }
 
     public static function update($table, $values, $index='id') {
@@ -77,7 +79,7 @@ class DB {
         return $result;
     }
 
-    public static function prepare(string $statement, array $driver_options=[]): PDOStatement {
+    public static function prepare(string $statement, array $driver_options=[]): \PDOStatement {
         return self::getInstance()->prepare($statement, $driver_options);
     }
 
