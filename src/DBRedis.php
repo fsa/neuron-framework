@@ -27,7 +27,7 @@ class DBRedis {
         }
         self::$redis=new \Redis();
         try {
-            self::$redis->connect((empty($db['scheme'])?'':$db['scheme']."://").$db["host"], $db["port"] ?? 6379);
+            self::$redis->connect((empty($db['scheme']=='rediss')?'':"tls://").$db["host"], $db["port"] ?? 6379);
         } catch (\RedisException $ex) {
             throw new AppException('Redis connect failed: '.$ex->getMessage());
         }
