@@ -31,7 +31,8 @@ class HttpResponse {
 
     public static function getTemplate() {
         if (is_null(self::$template)) {
-            self::$template=new (self::$template_namespace.'\\Main');
+            $tpl=self::$template_namespace.'\\Main';
+            self::$template=new $tpl;
         }
         return self::$template;
     }
@@ -97,7 +98,8 @@ class HttpResponse {
     }
 
     public static function showLoginForm(string $redirect_url=null) {
-        $template=new (self::$template_namespace.'\\Login');
+        $tpl=self::$template_namespace.'\\Login';
+        $template=new $tpl;
         $template->title='Вход в систему';
         $template->context=self::$context;
         if ($redirect_url) {
@@ -128,7 +130,8 @@ class HttpResponse {
     }
 
     public static function showMessagePage(string $message, string $title, string $style=null) {
-        $template=new (self::$template_namespace.'\\Message');
+        $tpl=self::$template_namespace.'\\Message';
+        $template=new $tpl;
         $template->style=$style;
         $template->title=$title;
         $template->context=self::$context;
