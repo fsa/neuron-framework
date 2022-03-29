@@ -20,7 +20,7 @@ class Session {
         return self::$_session;
     }
 
-    public static function start($user) {
+    public static function start(UserInterface $user) {
         $session=self::getInstance();
         $session->login($user);
     }
@@ -162,7 +162,7 @@ class Session {
         return true;
     }
 
-    private function login($user, $session_time=1800, $token_time=2592000) {
+    private function login(UserInterface $user, $session_time=1800, $token_time=2592000) {
         $old_token=filter_input(INPUT_COOKIE, $this->cookie_token);
         if ($old_token) {
             $this->revokeToken($old_token);
