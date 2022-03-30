@@ -2,6 +2,9 @@
 
 namespace FSA\Neuron;
 
+use Redis,
+    RedisException;
+
 class DBRedis {
 
     private static $redis=null;
@@ -12,7 +15,7 @@ class DBRedis {
     private function __clone() {
     }
 
-    public static function getInstance(): \Redis {
+    public static function getInstance(): Redis {
         if (self::$redis) {
             return self::$redis;
         }
@@ -25,11 +28,11 @@ class DBRedis {
         }  else {
             $db = parse_url($url);
         }
-        self::$redis=new \Redis();
+        self::$redis=new Redis();
         $scheme=(isset($db['scheme']) and $db['scheme']=='rediss')?"tls://":'';
         try {
             self::$redis->connect($scheme.$db["host"], $db["port"] ?? 6379);
-        } catch (\RedisException $ex) {
+        } catch (RedisException $ex) {
             throw new AppException('Redis connect failed: '.$ex->getMessage());
         }
         if(!empty($db["pass"])) {
