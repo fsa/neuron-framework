@@ -67,7 +67,7 @@ abstract class Entity {
         $this->$param=is_array($values)?array_keys($values):null;
     }
 
-    public static function getEntity($param, $method=INPUT_POST): self {
+    public static function getEntity($param, $method=INPUT_POST) { #:static in php 8.0
         $id=filter_input($method, $param);
         $class=get_called_class();
         return $id?$class::fetch($id):new $class;
