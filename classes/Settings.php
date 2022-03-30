@@ -2,6 +2,8 @@
 
 namespace FSA\Neuron;
 
+use Composer\Autoload\ClassLoader;
+
 class Settings {
 
     private static $_instance=null;
@@ -12,7 +14,9 @@ class Settings {
     }
 
     private function __construct() {
-        $this->settings=require __DIR__.'/../../settings.php';
+        # Hack?
+        $loaders=ClassLoader::getRegisteredLoaders();
+        $this->settings=require array_key_first($loaders).'/../settings.php';
     }
 
     public static function getInstance() {
