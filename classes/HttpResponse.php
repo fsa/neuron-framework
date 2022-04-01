@@ -334,8 +334,6 @@ class HttpResponse
 
     private static function init()
     {
-        ini_set('syslog.filter', 'raw');
-        openlog("shcc", LOG_PID | LOG_ODELAY, LOG_USER);
         if (getenv('TZ')) {
             date_default_timezone_set(getenv('TZ'));
         }
