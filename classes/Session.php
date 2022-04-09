@@ -46,6 +46,12 @@ class Session {
         return $session->checkAccess($scope);
     }
 
+    public static function refresh() {
+        if (!self::$_session) {
+            self::$_session = new self;
+        }
+    }
+
     public static function getUserId() {
         $session=self::getInstance();
         if (isset($session->session)) {
@@ -80,7 +86,7 @@ class Session {
             'domain'=>getenv('SESSION_DOMAIN')?getenv('SESSION_DOMAIN'):'',
             'secure'=>getenv('SESSION_SECURE')?getenv('SESSION_SECURE'):false,
             'httponly'=>true,
-            'samesite'=>'Strict'
+            'samesite'=>getenv('SESSION_SAMESITE')?getenv('SESSION_SAMESITE'):'Strict'
         ];
         $session_cookie=filter_input(INPUT_COOKIE, $this->cookie_session);
         if ($session_cookie) {
