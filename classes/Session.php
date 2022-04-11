@@ -149,6 +149,12 @@ class Session {
             return false;
         }
         $class_name=$session->class;
+        if (!class_exists($class_name)) {
+            #TODO: log
+            $this->dropTokenCookie();
+            $this->storageDelToken($token);
+            return false;
+        }
         $user=new $class_name(...$session->args);
         if (!$user->validate()) {
             $this->dropTokenCookie();
