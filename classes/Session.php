@@ -217,7 +217,7 @@ class Session
         $session_token = $this->generateRandomString();
         $token = $this->generateRandomString();
         $this->session = ['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'refresh_token' => $token];
-        $this->storage->setSession($session_token, $user);
+        $this->storage->setSession($session_token, $this->session);
         $this->storage->setToken($token, ['class' => get_class($user), 'validate'=>$user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $session_lifetime, 'token_lifetime' => $token_lifetime]);
         $this->setSessionCookie($session_token);
         $this->setTokenCookie($token);
