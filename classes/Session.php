@@ -197,7 +197,7 @@ class Session
         }
         $session_token = $this->generateRandomString();
         $new_token = $this->generateRandomString();
-        $this->session = ['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'revoke_token' => $token, 'refresh_token' => $new_token];
+        $this->session = (object)['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'revoke_token' => $token, 'refresh_token' => $new_token];
         $this->storage->setSession($session_token, $this->session);
         $this->storage->addRevokeToken($token, $new_token);
         $this->storage->setToken($new_token, ['revoke_token' => $token, 'class' => get_class($user), 'validate'=>$user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $this->cookie_session_lifetime, 'token_lifetime' => $this->cookie_token_lifetime]);
@@ -216,7 +216,7 @@ class Session
         $this->setTokenLifetime($token_lifetime);
         $session_token = $this->generateRandomString();
         $token = $this->generateRandomString();
-        $this->session = ['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'refresh_token' => $token];
+        $this->session = (object)['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'refresh_token' => $token];
         $this->storage->setSession($session_token, $this->session);
         $this->storage->setToken($token, ['class' => get_class($user), 'validate'=>$user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $session_lifetime, 'token_lifetime' => $token_lifetime]);
         $this->setSessionCookie($session_token);
