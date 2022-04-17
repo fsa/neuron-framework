@@ -13,8 +13,8 @@ class GroupEntity extends Entity {
     public $name;
     public $description;
 
-    public static function getGroups() {
-        $s=DB::query('SELECT g.name, g.description FROM user_groups g ORDER BY g.name');
+    public static function getGroups(PDO $pdo) {
+        $s=$pdo->query('SELECT g.name, g.description FROM user_groups g ORDER BY g.name');
         return $s->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 }

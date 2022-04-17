@@ -2,100 +2,111 @@
 
 namespace FSA\Neuron\HTML;
 
-class TableView implements DBQueryTemplate {
+class TableView implements DBQueryTemplate
+{
 
-    public $fields=[];
-    public $buttons=[];
+    public $fields = [];
+    public $buttons = [];
     public $caption;
     public $style_row;
 
-    public function setCaption(string $caption) {
-        $this->caption=$caption;
+    public function setCaption(string $caption)
+    {
+        $this->caption = $caption;
     }
 
-    public function setStyleField(string $name) {
-        $this->style_row=$name;
+    public function setStyleField(string $name)
+    {
+        $this->style_row = $name;
     }
 
-    public function addField($name, $description) {
-        $this->fields[$name]=$description;
+    public function addField($name, $description)
+    {
+        $this->fields[$name] = $description;
     }
 
-    public function addButton($button) {
-        $this->buttons[]=$button;
+    public function addButton($button)
+    {
+        $this->buttons[] = $button;
     }
 
-    public function showHeader(){
+    public function showHeader()
+    {
 ?>
 <div class="table-responsive">
-    <table class="table table-striped table-hover table-sm">
+<table class="table table-striped table-hover table-sm">
 <?php
         if (!is_null($this->caption)) {
 ?>
-    <caption style="caption-side: top;"><?=$this->caption?></caption>
+<caption style="caption-side: top;"><?= $this->caption ?></caption>
 <?php
         }
 ?>
-    <tr>
+<tr>
 <?php
-        $fields=$this->fields;
-        if(sizeof($this->buttons)) {
-            $fields['buttons']='Действия';
+        $fields = $this->fields;
+        if (sizeof($this->buttons)) {
+            $fields['buttons'] = 'Действия';
         }
         foreach ($fields as $description) {
 ?>
-        <th class="table-bordered"><?=$description?></th>
+<th class="table-bordered"><?= $description ?></th>
 <?php
         }
 ?>
-    </tr>
+</tr>
 <?php
     }
 
-    public function showRow($row){
-        $style=(!is_null($this->style_row) and !is_null($row->{$this->style_row}))?' '.$row->{$this->style_row}:'';
+    public function showRow($row)
+    {
+        $style = (!is_null($this->style_row) and !is_null($row->{$this->style_row})) ? ' ' . $row->{$this->style_row} : '';
 ?>
-        <tr class="table-bordered<?=$style?>">
+<tr class="table-bordered<?= $style ?>">
 <?php
         foreach (array_keys($this->fields) as $name) {
 ?>
-            <td><?=$row->$name?></td>
+<td><?= $row->$name ?></td>
 <?php
         }
-        if(sizeof($this->buttons)) {
+        if (sizeof($this->buttons)) {
 ?>
-            <td><?=$this->getButtons($row)?></td>
+<td><?= $this->getButtons($row) ?></td>
 <?php
         }
 ?>
-        </tr>
+</tr>
 <?php
     }
 
-    public function showEmpty() {
+    public function showEmpty()
+    {
         $this->showHeader();
 ?>
-        <tr class="table-bordered"><td colspan="<?=sizeof($this->fields)?>">Нет данных</td></tr>
+<tr class="table-bordered">
+<td colspan="<?= sizeof($this->fields) ?>">Нет данных</td>
+</tr>
 <?php
         $this->showFooter();
     }
 
-    public function showFooter(){
+    public function showFooter()
+    {
 ?>
-    </table>
+</table>
 </div>
 <?php
     }
 
-    private function getButtons($row) {
-        $buttons=[];
-        foreach ($this->buttons AS $button) {
-            $value=$row->{$button->getParamField()};
+    private function getButtons($row)
+    {
+        $buttons = [];
+        foreach ($this->buttons as $button) {
+            $value = $row->{$button->getParamField()};
             if (!is_null($value)) {
-                $buttons[]=$button->getHtml($value);
+                $buttons[] = $button->getHtml($value);
             }
         }
         return join('<br>', $buttons);
     }
-
 }

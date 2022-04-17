@@ -2,7 +2,8 @@
 
 namespace FSA\Neuron\HTML;
 
-interface DBQueryTemplate {
+interface DBQueryTemplate
+{
 
     public function setCaption(string $caption);
 

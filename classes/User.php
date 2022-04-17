@@ -2,65 +2,77 @@
 
 namespace FSA\Neuron;
 
-class User implements UserInterface {
+use PDO;
+
+abstract class User implements UserInterface
+{
 
     public $uuid;
     public $login;
     public $name;
     public $email;
     public $scope;
+    private $pdo;
 
-    public static function login($login, $password): ?self {
-        $s=DB::prepare('SELECT uuid, password_hash FROM users WHERE (login=? OR (email IS NOT NULL AND email=?)) AND NOT COALESCE(disabled, false)');
+    function __construct(PDO $pdo)
+    {
+        $this->pdo = $pdo;
+    }
+
+    public function login($login, $password): bool
+    {
+        $s = $this->pdo->prepare('SELECT uuid, password_hash FROM users WHERE (login=? OR (email IS NOT NULL AND email=?)) AND NOT COALESCE(disabled, false)');
         $s->execute([$login, $login]);
-        $user=$s->fetchObject();
+        $user = $s->fetchObject();
         if (!($user and password_verify($password, $user->password_hash))) {
-            return null;
+            return false;
         }
-        return new self($user->uuid);
+        $this->refresh(['uuid' => $user->uuid]);
+        return true;
     }
 
-    public function __construct(string $uuid=null) {
-        if (is_null($uuid)) {
-            return;
+    function refresh(array $args): bool
+    {
+        if (!isset($args['uuid'])) {
+            return false;
         }
-        $s=DB::prepare("WITH usr AS (SELECT * FROM users u WHERE uuid=? AND NOT COALESCE(disabled, false)), groups_set AS (SELECT uuid, unnest(groups) AS gid FROM usr), gscope_set AS (SELECT uuid, unnest(ug.scope) AS gscope FROM groups_set g LEFT JOIN user_groups ug ON g.gid=ug.name GROUP BY uuid, gscope), gscope AS (SELECT uuid, array_agg(gscope) AS group_scope FROM gscope_set GROUP BY uuid) SELECT json_build_object('uuid',uuid, 'login',login, 'name', name, 'email', email, 'scope', to_json(group_scope||scope)) FROM usr LEFT JOIN gscope USING (uuid)");
-        $s->execute([$uuid]);
-        $entity=$s->fetchColumn();
+        $s = $this->pdo->prepare("WITH usr AS (SELECT * FROM users u WHERE uuid=? AND NOT COALESCE(disabled, false)), groups_set AS (SELECT uuid, unnest(groups) AS gid FROM usr), gscope_set AS (SELECT uuid, unnest(ug.scope) AS gscope FROM groups_set g LEFT JOIN user_groups ug ON g.gid=ug.name GROUP BY uuid, gscope), gscope AS (SELECT uuid, array_agg(gscope) AS group_scope FROM gscope_set GROUP BY uuid) SELECT json_build_object('uuid',uuid, 'login',login, 'name', name, 'email', email, 'scope', to_json(group_scope||scope)) FROM usr LEFT JOIN gscope USING (uuid)");
+        $s->execute([$args['uuid']]);
+        $entity = $s->fetchColumn();
         if (!$entity) {
-            return;
+            return false;
         }
-        foreach (json_decode($entity) as $key=> $value) {
-            $this->$key=$value;
+        foreach (json_decode($entity) as $key => $value) {
+            $this->$key = $value;
         }
+        return true;
     }
 
-    public function getId() {
+    function getProperties(): array
+    {
+        return ['uuid' => $this->uuid];
+    }
+
+    function getId()
+    {
         return $this->uuid;
     }
 
-    public function getLogin() {
+    function getLogin(): string
+    {
         return $this->login;
     }
 
-    public function getName() {
+    function getName(): string
+    {
         return $this->name;
     }
-
-    public function getEmail() {
+    function getEmail(): string
+    {
         return $this->email;
     }
-
-    public function getScope() {
+    function getScope(): array
+    {
         return $this->scope;
     }
-
-    public function validate() {
-        return isset($this->uuid);
-    }
-
-    public function getConstructorArgs() {
-        return [$this->uuid];
-    }
-
 }

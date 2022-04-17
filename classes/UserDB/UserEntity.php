@@ -2,12 +2,14 @@
 
 namespace FSA\Neuron\UserDB;
 
-use FSA\Neuron\Entity;
+use FSA\Neuron\Entity,
+    PDO;
 
-class UserEntity extends Entity {
+class UserEntity extends Entity
+{
 
-    const TABLENAME='users';
-    const ID='uuid';
+    const TABLENAME = 'users';
+    const ID = 'uuid';
 
     public $uuid;
     public $login;
@@ -20,30 +22,37 @@ class UserEntity extends Entity {
 
     public $password;
 
-    protected function getColumnValues(): array {
-        $row=get_object_vars($this);
+    public static function stmtGetAll(PDO $pdo): \PDOStatement
+    {
+        return $pdo->query('SELECT * FROM users ORDER BY login');
+    }
+
+    protected function getColumnValues(): array
+    {
+        $row = get_object_vars($this);
         unset($row['password']);
-        if($this->password) {
-            $row['password_hash']=password_hash($this->password, PASSWORD_DEFAULT, ['cost'=>12]);
+        if ($this->password) {
+            $row['password_hash'] = password_hash($this->password, PASSWORD_DEFAULT, ['cost' => 12]);
         } else {
             unset($row['password_hash']);
         }
-        if(is_array($this->scope)) {
-            $row['scope']='{'.join(',', $row['scope']).'}';
+        if (is_array($this->scope)) {
+            $row['scope'] = '{' . join(',', $row['scope']) . '}';
         }
-        if(is_array($this->groups)) {
-            $row['groups']='{'.join(',', $row['groups']).'}';
+        if (is_array($this->groups)) {
+            $row['groups'] = '{' . join(',', $row['groups']) . '}';
         }
-        $row['disabled']=$this->disabled===true?'t':'f';
+        $row['disabled'] = $this->disabled === true ? 't' : 'f';
         return $row;
     }
 
-    public function memberOfScope($scope) {
-        return array_search($scope, explode(',',trim($this->scope, '{}')))!==false;
+    public function memberOfScope($scope)
+    {
+        return array_search($scope, explode(',', trim($this->scope, '{}'))) !== false;
     }
 
-    public function memberOfGroup($group) {
-        return array_search($group, explode(',',trim($this->groups, '{}')))!==false;
+    public function memberOfGroup($group)
+    {
+        return array_search($group, explode(',', trim($this->groups, '{}'))) !== false;
     }
-
 }
