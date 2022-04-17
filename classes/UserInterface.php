@@ -10,5 +10,5 @@ interface UserInterface
     function getLogin(): string;
     function getName(): string;
     function getEmail(): string;
-    function getScope(): array;
+    function getScope(): ?array;
 }

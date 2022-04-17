@@ -71,7 +71,7 @@ abstract class User implements UserInterface
     {
         return $this->email;
     }
-    function getScope(): array
+    function getScope(): ?array
     {
         return $this->scope;
     }
