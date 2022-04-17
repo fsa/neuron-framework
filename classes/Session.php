@@ -112,6 +112,38 @@ class Session
         return false;
     }
 
+    public function getUserId()
+    {
+        if (isset($this->session)) {
+            return $this->session->id;
+        }
+        return null;
+    }
+
+    public function getUserLogin()
+    {
+        if (isset($this->session)) {
+            return $this->session->login;
+        }
+        return null;
+    }
+
+    public function getUserName()
+    {
+        if (isset($this->session)) {
+            return $this->session->name;
+        }
+        return null;
+    }
+
+    public function getUserEmail()
+    {
+        if (isset($this->session)) {
+            return $this->session->email;
+        }
+        return null;
+    }
+
     private function revokeToken($token)
     {
         $current_token = filter_input(INPUT_COOKIE, $this->cookie_token);
