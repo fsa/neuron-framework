@@ -32,17 +32,20 @@ class PostgreSQL extends PDO
         return $stmt->fetchColumn();
     }
 
-    public function update($table, $values, $index = 'id')
+    public function update($table, $values, $index = 'id', $old_index = null)
     {
+        if (is_null($old_index)) {
+            $old_index = $index;
+        }
         $keys = array_keys($values);
-        $i = array_search($index, $keys);
+        $i = array_search($old_index, $keys);
         if ($i !== false) {
             unset($keys[$i]);
         }
         foreach ($keys as &$key) {
             $key = $key . '=:' . $key;
         }
-        $stmt = $this->prepare('UPDATE ' . $table . ' SET ' . join(',', $keys) . ' WHERE ' . $index . '=:' . $index);
+        $stmt = $this->prepare('UPDATE ' . $table . ' SET ' . join(',', $keys) . ' WHERE ' . $index . '=:' . $old_index);
         return $stmt->execute($values);
     }
 }
