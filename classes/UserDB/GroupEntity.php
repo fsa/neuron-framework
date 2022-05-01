@@ -3,7 +3,6 @@
 namespace FSA\Neuron\UserDB;
 
 use FSA\Neuron\Entity,
-    FSA\Neuron\DB,
     PDO;
 
 class GroupEntity extends Entity {

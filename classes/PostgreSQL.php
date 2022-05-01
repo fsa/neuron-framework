@@ -48,4 +48,36 @@ class PostgreSQL extends PDO
         $stmt = $this->prepare('UPDATE ' . $table . ' SET ' . join(',', $keys) . ' WHERE ' . $index . '=:' . $old_index);
         return $stmt->execute($values);
     }
+
+    public function getEntity(string $class_name, array $where)
+    {
+        if (sizeof($where) == 0) {
+            return null;
+        }
+        $keys = array_keys($where);
+        foreach ($keys as &$key) {
+            $key = $key . '=:' . $key;
+        }
+        $s = $this->prepare('SELECT * FROM ' . $class_name::TABLE_NAME . ' WHERE ' . join(' AND ', $keys));
+        $s->execute($where);
+        return $s->fetchObject($class_name);
+    }
+
+    public function setEntity(SQLEntityInterface $object, $id=null)
+    {
+        $properties = $object->getProperties();
+        if (is_null($id)) {
+            $id = $object::UID;
+        }
+        $keys = array_keys($properties);
+        $i = array_search($id, $keys);
+        if ($i !== false) {
+            unset($keys[$i]);
+        }
+        foreach ($keys as &$key) {
+            $key = $key . '=:' . $key;
+        }
+        $stmt = $this->prepare('UPDATE ' . $object::TABLE_NAME . ' SET ' . join(',', $keys) . ' WHERE ' . $id . '=:' . $id);
+        return $stmt->execute($properties);
+    }
 }
