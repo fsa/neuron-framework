@@ -49,7 +49,7 @@ class PostgreSQL extends PDO
         return $stmt->execute($values);
     }
 
-    public function getEntity(string $class_name, array $where)
+    public function fetchEntity(string $class_name, array $where)
     {
         if (sizeof($where) == 0) {
             return null;
@@ -63,7 +63,19 @@ class PostgreSQL extends PDO
         return $s->fetchObject($class_name);
     }
 
-    public function setEntity(SQLEntityInterface $object, $id=null)
+    public function insertEntity(SQLEntityInterface $object)
+    {
+        $properties = $object->getProperties();
+        if (is_null($properties[$object::UID])) {
+            unset($properties[$object::UID]);
+        }
+        $keys = array_keys($properties);
+        $stmt = $this->prepare('INSERT INTO ' . $object::TABLE_NAME . ' (' . join(',', $keys) . ') VALUES (:' . join(',:', $keys) . ') RETURNING ' . $object::UID);
+        $stmt->execute($properties);
+        return $stmt->fetchColumn();
+    }
+
+    public function updateEntity(SQLEntityInterface $object, $id = null)
     {
         $properties = $object->getProperties();
         if (is_null($id)) {
@@ -77,7 +89,7 @@ class PostgreSQL extends PDO
         foreach ($keys as &$key) {
             $key = $key . '=:' . $key;
         }
-        $stmt = $this->prepare('UPDATE ' . $object::TABLE_NAME . ' SET ' . join(',', $keys) . ' WHERE ' . $id . '=:' . $id);
+        $stmt = $this->prepare('UPDATE ' . $object::TABLE_NAME . ' SET ' . join(',', $keys) . ' WHERE ' . $object::UID . '=:' . $id);
         return $stmt->execute($properties);
     }
 }
