@@ -159,7 +159,11 @@ class ResponseHtml extends Response
             $message = $description;
         }
         if ($this->header_shown) {
-            self::showPopup($message, $http_response_code . ' ' . $description, 'danger');
+            if ($http_response_code==200) {
+                self::showPopup($message, 'Ошибка', 'danger');
+            } else {
+                self::showPopup($message, $http_response_code . ' ' . $description, 'danger');
+            }
             self::showFooter();
             exit;
         }
