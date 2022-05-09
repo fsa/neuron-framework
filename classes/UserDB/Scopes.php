@@ -2,14 +2,27 @@
 
 namespace FSA\Neuron\UserDB;
 
-use FSA\Neuron\SQLEntityInterface;
+use FSA\Neuron\SQL\{EntityInterface, KeyPairInterface};
 
-class Scopes implements SQLEntityInterface
+class Scopes implements EntityInterface, KeyPairInterface
 {
-    const TABLE_NAME = 'user_scopes';
-    const UID = 'name';
     public $name;
     public $description;
+
+    public static function getTableName(): string
+    {
+        return 'user_scopes';
+    }
+
+    public static function getIndexRow(): string
+    {
+        return 'name';
+    }
+
+    public static function getNameRow(): string
+    {
+        return 'description';
+    }
 
     public function getProperties(): array
     {

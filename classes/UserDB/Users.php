@@ -2,13 +2,10 @@
 
 namespace FSA\Neuron\UserDB;
 
-use FSA\Neuron\SQLEntityInterface;
+use FSA\Neuron\SQL\EntityInterface;
 
-class Users implements SQLEntityInterface
+class Users implements EntityInterface
 {
-
-    const TABLE_NAME = 'users';
-    const UID = 'uuid';
     public $uuid;
     public $login;
     public $password_hash;
@@ -19,6 +16,16 @@ class Users implements SQLEntityInterface
     public $disabled;
 
     private $new_password_hash;
+
+    public static function getTableName(): string
+    {
+        return 'users';
+    }
+
+    public static function getIndexRow(): string
+    {
+        return 'uuid';
+    }
 
     public function __construct()
     {

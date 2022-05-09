@@ -6,7 +6,6 @@ use PDO;
 
 class PostgreSQL extends PDO
 {
-
     public function __construct($url)
     {
         if (empty($url)) {
@@ -49,37 +48,42 @@ class PostgreSQL extends PDO
         return $stmt->execute($values);
     }
 
-    public function fetchEntity(string $class_name, array $where)
+    public function fetchEntity(string $class_name, string|array $where)
     {
-        if (sizeof($where) == 0) {
-            return null;
+        if (is_string($where)) {
+            $where = [$class_name::getIndexRow() => $where];
+        } else {
+            if (sizeof($where) == 0) {
+                return null;
+            }
         }
         $keys = array_keys($where);
         foreach ($keys as &$key) {
             $key = $key . '=:' . $key;
         }
-        $s = $this->prepare('SELECT * FROM ' . $class_name::TABLE_NAME . ' WHERE ' . join(' AND ', $keys));
+        $s = $this->prepare('SELECT * FROM ' . $class_name::getTableName() . ' WHERE ' . join(' AND ', $keys));
         $s->execute($where);
         return $s->fetchObject($class_name);
     }
 
-    public function insertEntity(SQLEntityInterface $object)
+    public function insertEntity(SQL\EntityInterface $object)
     {
+        $index = $object::getIndexRow();
         $properties = $object->getProperties();
-        if (is_null($properties[$object::UID])) {
-            unset($properties[$object::UID]);
+        if (is_null($properties[$index])) {
+            unset($properties[$index]);
         }
         $keys = array_keys($properties);
-        $stmt = $this->prepare('INSERT INTO ' . $object::TABLE_NAME . ' (' . join(',', $keys) . ') VALUES (:' . join(',:', $keys) . ') RETURNING ' . $object::UID);
+        $stmt = $this->prepare('INSERT INTO ' . $object::getTableName() . ' (' . join(',', $keys) . ') VALUES (:' . join(',:', $keys) . ') RETURNING ' . $index);
         $stmt->execute($properties);
         return $stmt->fetchColumn();
     }
 
-    public function updateEntity(SQLEntityInterface $object, $id = null)
+    public function updateEntity(SQL\EntityInterface $object, $id = null)
     {
         $properties = $object->getProperties();
         if (is_null($id)) {
-            $id = $object::UID;
+            $id = $object::getIndexRow();
         }
         $keys = array_keys($properties);
         $i = array_search($id, $keys);
@@ -89,7 +93,30 @@ class PostgreSQL extends PDO
         foreach ($keys as &$key) {
             $key = $key . '=:' . $key;
         }
-        $stmt = $this->prepare('UPDATE ' . $object::TABLE_NAME . ' SET ' . join(',', $keys) . ' WHERE ' . $object::UID . '=:' . $id);
+        $stmt = $this->prepare('UPDATE ' . $object::getTableName() . ' SET ' . join(',', $keys) . ' WHERE ' . $object::getIndexRow() . '=:' . $id);
         return $stmt->execute($properties);
+    }
+
+    public function fetchKeyPair(string $class_name)
+    {
+        if (!is_subclass_of($class_name, SQL\EntityInterface::class)) {
+            throw new HtmlException('$class_name not instance of EntityInterface.', 500);
+        }
+        if (!is_subclass_of($class_name, SQL\KeyPairInterface::class)) {
+            throw new HtmlException('$class_name not instance of KeyPairInterface.', 500);
+        }
+        $s = $this->query('SELECT ' . $class_name::getIndexRow() . ', ' . $class_name::getNameRow() . ' FROM ' . $class_name::getTableName() . ' ORDER BY ' . $class_name::getNameRow());
+        return $s->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
+    public function queryEntity(string $class_name, string $order = null)
+    {
+        if (!is_subclass_of($class_name, SQL\EntityInterface::class)) {
+            throw new HtmlException('$class_name not instance of EntityInterface.', 500);
+        }
+        if (is_null($order)) {
+            $order = $class_name::getIndexRow();
+        }
+        return $this->query('SELECT * FROM ' . $class_name::getTableName() . ' ORDER BY ' . $order);
     }
 }

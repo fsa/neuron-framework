@@ -2,15 +2,28 @@
 
 namespace FSA\Neuron\UserDB;
 
-use FSA\Neuron\SQLEntityInterface;
+use FSA\Neuron\SQL\{EntityInterface, KeyPairInterface};
 
-class Groups implements SQLEntityInterface
+class Groups implements EntityInterface, KeyPairInterface
 {
-    const TABLE_NAME = 'user_groups';
-    const UID = 'name';
     public $name;
     public $scope;
     public $description;
+
+    public static function getTableName(): string
+    {
+        return 'user_groups';
+    }
+
+    public static function getIndexRow(): string
+    {
+        return 'name';
+    }
+
+    public static function getNameRow(): string
+    {
+        return 'description';
+    }
 
     public function __construct()
     {
@@ -18,6 +31,7 @@ class Groups implements SQLEntityInterface
             $this->scope = explode(',', trim($this->scope, '{}'));
         }
     }
+
     public function getProperties(): array
     {
         $properties = get_object_vars($this);

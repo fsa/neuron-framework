@@ -4,7 +4,6 @@ namespace FSA\Neuron;
 
 abstract class App
 {
-
     /* константы должны быть заданы в дочернем классе */
     const REDIS_PREFIX = self::REDIS_PREFIX;
     const LOG_TAG = self::LOG_TAG;
@@ -91,6 +90,36 @@ abstract class App
             }
         }
         return static::$session;
+    }
+
+    public static function filterInput(object &$object, int $type = INPUT_POST): FilterInput
+    {
+        return new FilterInput($object, $type);
+    }
+
+    public static function getEntityClass(string $name): string
+    {
+        return match ($name) {
+            'users' => UserDB\Users::class,
+            'groups' => UserDB\Groups::class,
+            'scopes' => UserDB\Scopes::class
+        };
+    }
+
+    public static function newEntity(string $name)
+    {
+        $class = static::getEntityClass($name);
+        return new $class;
+    }
+
+    public static function fetchEntity(string $name, string|array $where)
+    {
+        return static::sql()->fetchEntity(static::getEntityClass($name), $where);
+    }
+
+    public static function fetchKeyPair(string $name)
+    {
+        return static::sql()->fetchKeyPair(static::getEntityClass($name));
     }
 
     public static function getVar($name)
