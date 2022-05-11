@@ -41,9 +41,9 @@ class ResponseHtml extends Response
         $this->context = $context;
     }
 
-    public function setLastModified(string $timestamp)
+    public function setLastModified(int $timestamp)
     {
-        $this->last_modified = strtotime($timestamp);
+        $this->last_modified = $timestamp;
     }
 
     public function setETag(string $etag)
@@ -74,7 +74,7 @@ class ResponseHtml extends Response
         $template->title = $title;
         $template->context = $this->context;
         if (isset($this->last_modified)) {
-            header("Last-Modified: " . substr(gmdate('r', $this->last_modified), 0, -5) . 'GMT');
+            header("Last-Modified: " . gmdate('D, d M Y H:i:s', $this->last_modified) . 'GMT');
         } else {
             $this->disableBrowserCache();
         }
