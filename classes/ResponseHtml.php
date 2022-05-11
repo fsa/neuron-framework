@@ -74,7 +74,7 @@ class ResponseHtml extends Response
         $template->title = $title;
         $template->context = $this->context;
         if (isset($this->last_modified)) {
-            header("Last-Modified: " . gmdate('D, d M Y H:i:s', $this->last_modified) . 'GMT');
+            header("Last-Modified: " . gmdate('D, d M Y H:i:s', $this->last_modified) . ' GMT');
         } else {
             $this->disableBrowserCache();
         }
