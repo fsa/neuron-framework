@@ -75,11 +75,12 @@ class ResponseHtml extends Response
         $template->context = $this->context;
         if (isset($this->last_modified)) {
             header("Last-Modified: " . substr(gmdate('r', $this->last_modified), 0, -5) . 'GMT');
+        } else {
+            $this->disableBrowserCache();
         }
         if (isset($this->etag)) {
             header("ETag: " . $this->etag);
         }
-        $this->disableBrowserCache();
         $notification = filter_input(INPUT_COOKIE, 'notification');
         if ($notification) {
             $template->notify = $notification;
