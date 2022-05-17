@@ -41,7 +41,7 @@ class RedisDB extends Redis {
         $this->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
         $it = NULL;
         $result = [];
-        while ($arr_keys = $this->redis->scan($it, $search_key)) {
+        while ($arr_keys = $this->scan($it, $search_key)) {
             foreach ($arr_keys as $str_key) {
                 $result[] = $str_key;
             }
@@ -54,7 +54,7 @@ class RedisDB extends Redis {
         $this->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
         $it = NULL;
         $count = 0;
-        while ($arr_keys = $this->redis->scan($it, $search_key)) {
+        while ($arr_keys = $this->scan($it, $search_key)) {
             foreach ($arr_keys as $str_key) {
                 $this->del($str_key);
                 $count++;
