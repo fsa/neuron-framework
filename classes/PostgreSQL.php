@@ -66,7 +66,7 @@ class PostgreSQL extends PDO
         return $s->fetchObject($class_name);
     }
 
-    public function insertEntity(SQL\EntityInterface $object)
+    public function insertEntity(SQL\EntityInterface &$object)
     {
         $index = $object::getIndexRow();
         $properties = $object->getProperties();
@@ -76,7 +76,9 @@ class PostgreSQL extends PDO
         $keys = array_keys($properties);
         $stmt = $this->prepare('INSERT INTO ' . $object::getTableName() . ' (' . join(',', $keys) . ') VALUES (:' . join(',:', $keys) . ') RETURNING ' . $index);
         $stmt->execute($properties);
-        return $stmt->fetchColumn();
+        $id = $stmt->fetchColumn();
+        $object->$index = $id;
+        return $id;
     }
 
     public function updateEntity(SQL\EntityInterface $object, $id = null)

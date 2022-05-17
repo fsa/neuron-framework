@@ -36,4 +36,17 @@ class RedisDB extends Redis {
         }
     }
 
+    public function searchKey($search_key)
+    {
+        $key_length = strlen($search_key);
+        $this->redis->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
+        $it = NULL;
+        $result = [];
+        while ($arr_keys = $this->redis->scan($it, $search_key)) {
+            foreach ($arr_keys as $str_key) {
+                $result[] = $str_key;
+            }
+        }
+        return $result;
+    }
 }
