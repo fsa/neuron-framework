@@ -4,11 +4,17 @@ namespace FSA\Neuron;
 
 class ResponseJson extends Response
 {
+    private $options = JSON_UNESCAPED_UNICODE;
 
-    public function json($response, $options = JSON_UNESCAPED_UNICODE)
+    public function setJsonOptions(int $options)
+    {
+        $this->options = $options;
+    }
+
+    public function json($response)
     {
         header('Content-Type: application/json;charset=UTF-8');
-        echo json_encode($response, $options);
+        echo json_encode($response, $this->options);
         exit;
     }
 
@@ -22,7 +28,17 @@ class ResponseJson extends Response
         exit;
     }
 
-    public function jsonError($http_response_code, $response, $options = JSON_UNESCAPED_UNICODE)
+    public function return($response)
+    {
+        if (is_null($response)) {
+            $this->returnError(404);
+        }
+        header('Content-Type: application/json;charset=UTF-8');
+        echo json_encode($response, $this->options);
+        exit;
+    }
+
+    public function jsonError($http_response_code, $response)
     {
         http_response_code($http_response_code);
         header('Content-Type: application/json;charset=UTF-8');
@@ -31,7 +47,7 @@ class ResponseJson extends Response
         if (is_string($response)) {
             echo $response;
         } else {
-            echo json_encode($response, $options);
+            echo json_encode($response, $this->options);
         }
         exit;
     }

@@ -51,6 +51,12 @@ class Response
         printf('Location: <a href="%s">%s</a>', $location, $location);
         exit;
     }
+    
+    public function return($response)
+    {
+        echo (string)$response;
+        exit;
+    }
 
     public function returnEmpty(int $http_response_code)
     {
