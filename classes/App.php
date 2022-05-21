@@ -65,12 +65,22 @@ abstract class App
         return static::$db;
     }
 
+    public static function sqlCallback(): callable
+    {
+        return [static::class, 'sql'];
+    }
+
     public static function redis(): RedisDB
     {
         if (is_null(static::$redis)) {
             static::$redis = new RedisDB(getenv('REDIS_URL'));
         }
         return static::$redis;
+    }
+
+    public static function redisCallback(): callable
+    {
+        return [static::class, 'redis'];
     }
 
     public static function session(): Session
