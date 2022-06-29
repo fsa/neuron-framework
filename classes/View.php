@@ -14,4 +14,31 @@ abstract class View
     }
 
     abstract function route();
+
+    protected function isFileName() {
+        return empty($this->path);
+    }
+
+    protected function isDirName() {
+        return $this->path==[''];
+    }
+
+    protected function isPath(string $path): bool|array
+    {
+        $parts = explode('/', $path);
+        if (sizeof($this->path) != sizeof($parts)) {
+            return false;
+        }
+        $params = [];
+        foreach ($parts as $i=>$part) {
+            if(substr($part, 0, 1)=='#') {
+                $params[substr($part, 1)] = $this->path[$i];
+            } else {
+                if ($part != $this->path[$i]) {
+                    return false;
+                }
+            }
+        }
+        return empty($params)?true:$params;
+    }
 }
