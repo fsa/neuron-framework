@@ -29,16 +29,16 @@ abstract class View
         if (sizeof($this->path) != sizeof($parts)) {
             return false;
         }
-        $params = [];
         foreach ($parts as $i=>$part) {
             if(substr($part, 0, 1)=='#') {
-                $params[substr($part, 1)] = $this->path[$i];
+                $name = substr($part, 1);
+                $this->$name = $this->path[$i];
             } else {
                 if ($part != $this->path[$i]) {
                     return false;
                 }
             }
         }
-        return empty($params)?true:$params;
+        return true;
     }
 }
