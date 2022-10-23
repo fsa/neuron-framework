@@ -4,7 +4,7 @@ namespace FSA\Neuron;
 
 use PDO;
 
-abstract class User implements UserInterface
+class User implements UserInterface
 {
 
     public $uuid;
@@ -67,12 +67,20 @@ abstract class User implements UserInterface
     {
         return $this->name;
     }
+
     function getEmail(): string
     {
         return $this->email;
     }
+
     function getScope(): ?array
     {
         return $this->scope;
+    }
+
+    public static function validate(array $properties): self
+    {
+        $user = new self(App::sql());
+        return $user->refresh($properties) ? $user : null;
     }
 }

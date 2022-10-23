@@ -10,6 +10,9 @@ abstract class App
     const SESSION_NAME = self::SESSION_NAME;
     const SETTINGS_FILE = self::SETTINGS_FILE;
 
+    const ERR_ACCESS_DENIED = 'Неверное имя пользователя или пароль.';
+    const ERR_INTERNAL_SERVER_ERROR = 'Внутренняя ошибка сервера';
+
     protected static $db;
     protected static $redis;
     protected static $response;
@@ -102,6 +105,21 @@ abstract class App
         return static::$session;
     }
 
+    public static function login($login, $password)
+    {
+        $user = new User(self::sql());
+        if (!$user->login($login, $password)) {
+            self::response()->returnError(401, self::ERR_ACCESS_DENIED);
+            exit;
+        }
+        self::session()->login($user);
+    }
+
+    public static function logout()
+    {
+        self::session()->logout();
+    }
+
     public static function filterInput(object &$object, int $type = INPUT_POST): FilterInput
     {
         return new FilterInput($object, $type);
@@ -171,7 +189,7 @@ abstract class App
             static::response()->returnError(500, '<pre>' . (string) $ex . '</pre>');
         } else {
             error_log($ex, 0);
-            static::response()->returnError(500, 'Внутренняя ошибка сервера');
+            static::response()->returnError(500, self::ERR_INTERNAL_SERVER_ERROR);
         }
         exit;
     }
