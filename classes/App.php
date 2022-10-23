@@ -17,6 +17,20 @@ abstract class App
     abstract protected static function constSessionName(): string;
     abstract protected static function constSettingsFile(): string;
 
+    protected static function getContext(): ?array
+    {
+        return null;
+    }
+
+    protected static function getTemplates(): array
+    {
+        return [
+            Templates\Main::class,
+            Templates\Login::class,
+            Templates\Message::class
+        ];
+    }
+
     public static function init()
     {
         if ($tz = getenv('TZ')) {
@@ -24,10 +38,13 @@ abstract class App
         }
     }
 
-    public static function initHtml($main_template, $login_template, $message_template): ResponseHtml
+    public static function initHtml(): ResponseHtml
     {
         static::init();
-        static::$response = new ResponseHtml($main_template, $login_template, $message_template);
+        static::$response = new ResponseHtml(...static::getTemplates());
+        if ($context = static::getContext()) {
+            self::$response->setContext($context);
+        }
         set_exception_handler([static::class, 'exceptionHandler']);
         return static::$response;
     }
