@@ -4,12 +4,6 @@ namespace FSA\Neuron;
 
 abstract class App
 {
-    /* константы должны быть заданы в дочернем классе */
-    const REDIS_PREFIX = self::REDIS_PREFIX;
-    const LOG_TAG = self::LOG_TAG;
-    const SESSION_NAME = self::SESSION_NAME;
-    const SETTINGS_FILE = self::SETTINGS_FILE;
-
     const ERR_ACCESS_DENIED = 'Неверное имя пользователя или пароль.';
     const ERR_INTERNAL_SERVER_ERROR = 'Внутренняя ошибка сервера';
 
@@ -19,10 +13,12 @@ abstract class App
     protected static $settings;
     protected static $session;
 
+    abstract protected static function constVarPrefix(): string;
+    abstract protected static function constSessionName(): string;
+    abstract protected static function constSettingsFile(): string;
+
     public static function init()
     {
-        ini_set('syslog.filter', 'raw');
-        openlog(static::LOG_TAG, LOG_PID | LOG_ODELAY, LOG_USER);
         if ($tz = getenv('TZ')) {
             date_default_timezone_set($tz);
         }
@@ -52,7 +48,7 @@ abstract class App
     public static function getSettings(string $name, $default_value = null)
     {
         if (is_null(static::$settings)) {
-            static::$settings = require static::SETTINGS_FILE;
+            static::$settings = require static::constSettingsFile();
         }
         return static::$settings[$name] ?? $default_value;
     }
@@ -89,8 +85,8 @@ abstract class App
     public static function session(): Session
     {
         if (is_null(static::$session)) {
-            $storage = new SessionStorageRedis(static::REDIS_PREFIX, static::redis());
-            static::$session = new Session(getenv('SESSION_NAME') ?: static::SESSION_NAME, $storage);
+            $storage = new SessionStorageRedis(static::constVarPrefix(), static::redis());
+            static::$session = new Session(getenv('SESSION_NAME') ?: static::constSessionName(), $storage);
             static::$session->setCookieOptions([
                 'path' => getenv('SESSION_PATH'),
                 'domain' => getenv('SESSION_DOMAIN'),
@@ -152,12 +148,12 @@ abstract class App
 
     public static function getVar($name)
     {
-        return static::redis()->get(static::REDIS_PREFIX . ':Vars:' . $name);
+        return static::redis()->get(static::constVarPrefix() . ':Vars:' . $name);
     }
 
     public static function setVar($name, $value)
     {
-        static::redis()->set(static::REDIS_PREFIX . ':Vars:' . $name, $value);
+        static::redis()->set(static::constVarPrefix() . ':Vars:' . $name, $value);
     }
 
     public static function getVarJson($name, $array = true)
@@ -173,7 +169,7 @@ abstract class App
 
     public static function delVar($name)
     {
-        return static::redis()->del(static::REDIS_PREFIX . ':Vars:' . $name);
+        return static::redis()->del(static::constVarPrefix() . ':Vars:' . $name);
     }
 
     public static function exceptionHandler($ex)
