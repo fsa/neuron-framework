@@ -25,9 +25,9 @@ abstract class App
     protected static function getTemplates(): array
     {
         return [
-            Templates\Main::class,
-            Templates\Login::class,
-            Templates\Message::class
+            \Templates\Main::class,
+            \Templates\Login::class,
+            \Templates\Message::class
         ];
     }
 
