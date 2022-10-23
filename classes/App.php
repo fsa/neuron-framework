@@ -13,15 +13,20 @@ abstract class App
     protected static $settings;
     protected static $session;
 
+    /** Префикс для переменных */
     abstract protected static function constVarPrefix(): string;
+    /** Префикс для Cookie с данными сессии */
     abstract protected static function constSessionName(): string;
+    /** Путь до файла конфигурации */
     abstract protected static function constSettingsFile(): string;
 
+    /** Массив с данными для шаблонов */
     protected static function getContext(): ?array
     {
         return null;
     }
 
+    /** Классы с шаблонами страниц */
     protected static function getTemplates(): array
     {
         return [
@@ -31,6 +36,7 @@ abstract class App
         ];
     }
 
+    /** Инициализация приложения. Может быть расширено. */
     public static function init()
     {
         if ($tz = getenv('TZ')) {
