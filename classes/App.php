@@ -47,10 +47,10 @@ abstract class App
     public static function initHtml(...$templates): ResponseHtml
     {
         static::init();
-        if ($context = static::getContext()) {
-            self::$response->setContext($context);
-        }
         static::$response = new ResponseHtml(...array_replace(static::getTemplates(), array_slice($templates, 0, 3)));
+        if ($context = static::getContext()) {
+            static::$response->setContext($context);
+        }
         set_exception_handler([static::class, 'exceptionHandler']);
         return static::$response;
     }
