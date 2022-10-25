@@ -44,13 +44,10 @@ abstract class App
         }
     }
 
-    public static function initHtml(): ResponseHtml
+    public static function initHtml(...$templates): ResponseHtml
     {
         static::init();
-        static::$response = new ResponseHtml(...static::getTemplates());
-        if ($context = static::getContext()) {
-            self::$response->setContext($context);
-        }
+        static::$response = new ResponseHtml(...array_replace(static::getTemplates(), array_slice($templates, 0, 3)));
         set_exception_handler([static::class, 'exceptionHandler']);
         return static::$response;
     }
