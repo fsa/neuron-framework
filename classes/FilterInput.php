@@ -67,5 +67,4 @@ class FilterInput
         $values = filter_input($this->type, $param, FILTER_DEFAULT, FILTER_REQUIRE_ARRAY);
         $this->object->$param = is_array($values) ? array_keys($values) : null;
     }
-
 }

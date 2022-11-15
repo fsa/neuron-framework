@@ -58,8 +58,7 @@ class ResponseJson extends Response
         if (empty($message)) {
             $message = parent::HTTP_STATUS_CODES[$http_response_code] ?? 'Unknown';
         }
-        $this->jsonError($http_response_code, ['error' => $message, 'code'=>$http_response_code]);
+        $this->jsonError($http_response_code, ['error' => $message, 'code' => $http_response_code]);
         exit;
     }
- 
 }
