@@ -23,7 +23,7 @@ abstract class View
         return $this->path==[''];
     }
 
-    protected function isPath(string $path): bool|array
+    protected function isPath(string $path): bool
     {
         $parts = explode('/', $path);
         if (sizeof($this->path) != sizeof($parts)) {
