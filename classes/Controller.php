@@ -2,7 +2,7 @@
 
 namespace FSA\Neuron;
 
-abstract class View
+abstract class Controller
 {
     protected $name;
     protected $path;
