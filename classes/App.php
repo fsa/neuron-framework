@@ -12,13 +12,14 @@ abstract class App
     protected static $response;
     protected static $settings;
     protected static $session;
+    protected static $work_dir;
 
     /** Префикс для переменных */
     abstract protected static function constVarPrefix(): string;
     /** Префикс для Cookie с данными сессии */
     abstract protected static function constSessionName(): string;
-    /** Путь до файла конфигурации */
-    abstract protected static function constSettingsFile(): string;
+    /** Путь до рабочего каталога */
+    abstract protected static function constWorkDir(): string;
 
     /** Массив с данными для шаблонов */
     protected static function getContext(): ?array
@@ -67,11 +68,18 @@ abstract class App
     {
         return static::$response;
     }
+    
+    public static function getWorkDir() {
+        if (!static::$work_dir) {
+            static::$work_dir = static::constWorkDir();
+        }
+        return static::$work_dir;
+    }
 
     public static function getSettings(string $name, $default_value = null)
     {
         if (is_null(static::$settings)) {
-            static::$settings = require static::constSettingsFile();
+            static::$settings = require static::getWorkDir() . 'settings.php';
         }
         return static::$settings[$name] ?? $default_value;
     }
