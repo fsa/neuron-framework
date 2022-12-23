@@ -241,13 +241,7 @@ class Session
 
     private function generateRandomString(int $length = 32): string
     {
-        $symbols = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890';
-        $max_index = strlen($symbols) - 1;
-        $string = '';
-        for ($i = 0; $i < $length; $i++) {
-            $string .= $symbols[rand(0, $max_index)];
-        }
-        return $string;
+        return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode(openssl_random_pseudo_bytes($length)));
     }
 
     private function setSessionCookie(string $token): void
