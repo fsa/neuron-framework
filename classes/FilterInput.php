@@ -30,7 +30,7 @@ class FilterInput
     {
         $value = filter_input($this->type, $param);
         if ($value) {
-            $this->object->$param = str_replace("\r", '', $value);
+            $this->object->$param = str_replace(["\r\n", "\r"], "\n", $value);
         }
     }
 
