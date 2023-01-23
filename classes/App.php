@@ -19,7 +19,7 @@ abstract class App
     /** Префикс для Cookie с данными сессии */
     abstract protected static function constSessionName(): string;
     /** Путь до рабочего каталога */
-    abstract protected static function constWorkDir(): string;
+    abstract public static function constWorkDir(): string;
 
     /** Массив с данными для шаблонов */
     protected static function getContext(): ?array
