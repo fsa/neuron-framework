@@ -210,7 +210,7 @@ abstract class App
         if (end($class_parts) == 'UserException') {
             static::response()->returnError(200, $ex->getMessage());
         } else if (end($class_parts) == 'HtmlException') {
-            static::response()->returnError($ex->getCode(), $ex->getMessage());
+            static::response()->returnError($ex->getCode(), $ex->getMessage(), method_exists($ex, 'getDescription') ? $ex->getDescription() : null);
         } else if (getenv('DEBUG')) {
             error_log($ex, 0);
             static::response()->returnError(500, '<pre>' . (string) $ex . '</pre>');

@@ -52,13 +52,17 @@ class ResponseJson extends Response
         exit;
     }
 
-    public function returnError(int $http_response_code, $message = null)
+    public function returnError(int $http_response_code, $message = null, $description = null)
     {
         http_response_code($http_response_code);
         if (empty($message)) {
             $message = parent::HTTP_STATUS_CODES[$http_response_code] ?? 'Unknown';
         }
-        $this->jsonError($http_response_code, ['error' => $message, 'code' => $http_response_code]);
+        $error_response = ['code' => $http_response_code, 'error' => $message];
+        if ($description) {
+            $error_response['description'] = $description;
+        }
+        $this->jsonError($http_response_code, $error_response);
         exit;
     }
 }
