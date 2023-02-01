@@ -225,7 +225,7 @@ class Session
 
     public function logout()
     {
-        $this->user = null;
+        $this->session = null;
         $session_cookie = filter_input(INPUT_COOKIE, $this->cookie_session);
         if ($session_cookie) {
             $this->storage->delSession($session_cookie);
