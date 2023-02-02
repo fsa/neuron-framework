@@ -4,27 +4,23 @@ namespace FSA\Neuron;
 
 class Session
 {
-    const SESSION_LIFETIME = 1800;
-    const TOKEN_LIFETIME = 2592000;
-
-    private $session_lifetime = self::SESSION_LIFETIME;
-    private $refresh_token_lifetime = self::TOKEN_LIFETIME;
-    private $cookie_options;
     private $session;
     private $admins = [];
 
     public function __construct(
         private Cookie $session_cookie,
         private Cookie $refresh_token_cookie,
-        private SessionStorageInterface $storage
+        private TokenStorageInterface $session_token,
+        private TokenStorageInterface $refresh_token,
+        private RevokeTokenStorageInterface $revoke_token
     ) {
         $session_cookie = $this->session_cookie->get();
         if ($session_cookie) {
-            $this->session = $this->storage->getSession($session_cookie);
+            $this->session = $this->session_token->get($session_cookie);
             if (isset($this->session->revoke_token)) {
                 $this->revokeToken($this->session->revoke_token);
                 unset($this->session->revoke_token);
-                $this->storage->setSession($session_cookie, $this->session, $this->storage->getSessionTtl($session_cookie));
+                $this->session_token->set($session_cookie, $this->session);
             }
             if (isset($this->session)) {
                 return;
@@ -38,18 +34,6 @@ class Session
         if ($this->restoreSession()) {
             return;
         }
-    }
-
-    public function setSessionLifetime(int $session_lifetime)
-    {
-        $this->session_lifetime = $session_lifetime;
-        $this->storage->setSessionLifetime($session_lifetime);
-    }
-
-    public function setTokenLifetime(int $token_lifetime)
-    {
-        $this->refresh_token_lifetime = $token_lifetime;
-        $this->storage->setTokenLifetime($token_lifetime);
     }
 
     public function setAdmins(array $admins)
@@ -125,14 +109,14 @@ class Session
 
     private function revokeToken($token)
     {
-        $current_token = $this->session_cookie->get();
-        foreach ($this->storage->getRevokeTokens($token) as $revoke_token) {
+        $current_token = $this->refresh_token_cookie->get();
+        foreach ($this->revoke_token->get($token) as $revoke_token) {
             if ($revoke_token != $current_token) {
                 $this->revokeToken($revoke_token);
             }
         }
-        $this->storage->delToken($token);
-        $this->storage->delRevokeTokens($token);
+        $this->refresh_token->del($token);
+        $this->revoke_token->del($token);
     }
 
     private function restoreSession()
@@ -141,65 +125,57 @@ class Session
         if (!$token) {
             return false;
         }
-        $session = $this->storage->getToken($token);
+        $session = $this->refresh_token->get($token);
         if (!$session) {
             $this->refresh_token_cookie->drop();
             return false;
         }
-        if (isset($session->session_lifetime)) {
-            $this->setSessionLifetime($session->session_lifetime);
-        }
-        if (isset($session->token_lifetime)) {
-            $this->setTokenLifetime($session->token_lifetime);
-        }
         if (isset($session->revoke_token)) {
             $this->revokeToken($session->revoke_token);
             unset($session->revoke_token);
-            $this->storage->setToken($token, $session);
+            $this->refresh_token->set($token, $session);
         }
         if (!isset($session->class) or !isset($session->validate)) {
             $this->refresh_token_cookie->drop();
-            $this->storage->delToken($token);
+            $this->refresh_token->del($token);
             return false;
         }
         $class_name = $session->class;
         if (!class_exists($class_name)) {
             $this->refresh_token_cookie->drop();
-            $this->storage->delToken($token);
+            $this->refresh_token->del($token);
             return false;
         }
         $user = $class_name::validate((array)$session->validate);
         if (!$user) {
             $this->refresh_token_cookie->drop();
-            $this->storage->delToken($token);
+            $this->refresh_token->del($token);
             return false;
         }
         $session_token = $this->generateRandomString();
         $new_token = $this->generateRandomString();
         $this->session = (object)['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'revoke_token' => $token, 'refresh_token' => $new_token];
-        $this->storage->setSession($session_token, $this->session);
-        $this->storage->addRevokeToken($token, $new_token);
-        $this->storage->setToken($new_token, ['revoke_token' => $token, 'class' => get_class($user), 'validate' => $user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $this->session_lifetime, 'token_lifetime' => $this->refresh_token_lifetime]);
-        $this->session_cookie->set($session_token, $this->session_lifetime);
-        $this->refresh_token_cookie->set($new_token, $this->refresh_token_lifetime);
+        $this->session_token->set($session_token, $this->session);
+        $this->revoke_token->add($token, $new_token);
+        $this->refresh_token->set($new_token, ['revoke_token' => $token, 'class' => get_class($user), 'validate' => $user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR')]);
+        $this->session_cookie->set($session_token);
+        $this->refresh_token_cookie->set($new_token);
         return true;
     }
 
-    public function login(UserInterface $user, $session_lifetime = self::SESSION_LIFETIME, $token_lifetime = self::TOKEN_LIFETIME)
+    public function login(UserInterface $user)
     {
         $old_token = $this->session_cookie->get();
         if ($old_token) {
             $this->revokeToken($old_token);
         }
-        $this->setSessionLifetime($session_lifetime);
-        $this->setTokenLifetime($token_lifetime);
         $session_token = $this->generateRandomString();
         $token = $this->generateRandomString();
         $this->session = (object)['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'refresh_token' => $token];
-        $this->storage->setSession($session_token, $this->session);
-        $this->storage->setToken($token, ['class' => get_class($user), 'validate' => $user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $session_lifetime, 'token_lifetime' => $token_lifetime]);
-        $this->session_cookie->set($session_token, $this->session_lifetime);
-        $this->refresh_token_cookie->set($token, $this->refresh_token_lifetime);
+        $this->session_token->set($session_token, $this->session);
+        $this->refresh_token->set($token, ['class' => get_class($user), 'validate' => $user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR')]);
+        $this->session_cookie->set($session_token);
+        $this->refresh_token_cookie->set($token);
     }
 
     public function logout()
@@ -207,13 +183,13 @@ class Session
         $this->session = null;
         $session_cookie = $this->session_cookie->get();
         if ($session_cookie) {
-            $this->storage->delSession($session_cookie);
+            $this->session_token->del($session_cookie);
             $this->session_cookie->drop();
         }
         $token = $this->refresh_token_cookie->get();
         if ($token) {
             $this->revokeToken($token);
-            $this->storage->delToken($token);
+            $this->refresh_token->del($token);
             $this->refresh_token_cookie->drop();
         }
     }

@@ -6,6 +6,8 @@ abstract class App
 {
     const ERR_ACCESS_DENIED = 'Неверное имя пользователя или пароль.';
     const ERR_INTERNAL_SERVER_ERROR = 'Внутренняя ошибка сервера';
+    const SESSION_LIFETIME = 1800;
+    const REFRESH_TOKEN_LIFETIME = 2592000;
 
     protected static $db;
     protected static $redis;
@@ -117,23 +119,17 @@ abstract class App
     public static function session(): Session
     {
         if (is_null(static::$session)) {
-            $storage = new SessionStorageRedis(static::constVarPrefix(), static::redis());
             $name = getenv('SESSION_NAME') ?: static::constSessionName();
             $domain = getenv('SESSION_DOMAIN') ?: '';
             $secure = !empty(getenv('SESSION_SECURE'));
             $samesite = getenv('SESSION_SAMESITE') ?: 'Lax';
             static::$session = new Session(
-                new Cookie($name . '_access_token', domain: $domain, secure: $secure, samesite: $samesite),
-                new Cookie($name . '_refresh_token', domain: $domain, secure: $secure, samesite: $samesite),
-                $storage
+                new Cookie($name . '_access_token', static::SESSION_LIFETIME, domain: $domain, secure: $secure, samesite: $samesite),
+                new Cookie($name . '_refresh_token', static::REFRESH_TOKEN_LIFETIME, domain: $domain, secure: $secure, samesite: $samesite),
+                new TokenStorageRedis(static::redisCallback(), static::constVarPrefix() . ':Session:Token:', static::SESSION_LIFETIME),
+                new TokenStorageRedis(static::redisCallback(), static::constVarPrefix() . ':Session:RefreshToken:', static::REFRESH_TOKEN_LIFETIME),
+                new RevokeTokenStorageRedis(static::redisCallback(), static::constVarPrefix() . ':Session:RevokeToken:', static::REFRESH_TOKEN_LIFETIME)
             );
-            /*static::$session->setCookieOptions([
-                'path' => getenv('SESSION_PATH'),
-                'domain' => getenv('SESSION_DOMAIN'),
-                'secure' => !empty(getenv('SESSION_SECURE')),
-                'httponly' => !empty(getenv('SESSION_HTTPONLY')),
-                'samesite' => getenv('SESSION_SAMESITE')
-            ]);*/
             if ($admins = getenv('APP_ADMINS')) {
                 static::$session->setAdmins(explode(',', $admins));
             }

@@ -6,7 +6,7 @@ class Cookie
 {
     private $options;
 
-    public function __construct(private string $name, string $path = null, string $domain = null, bool $secure = null, bool $httponly = null, string $samesite = null)
+    public function __construct(private string $name, private int $lifetime, string $path = null, string $domain = null, bool $secure = null, bool $httponly = null, string $samesite = null)
     {
         $this->options = [
             'path' => $path ?? '/',
@@ -22,10 +22,10 @@ class Cookie
         return filter_input(INPUT_COOKIE, $this->name);
     }
 
-    public function set(string $value, int $lifetime): void
+    public function set(string $value): void
     {
         $options = $this->options;
-        $options['expires'] = time() + $lifetime;
+        $options['expires'] = time() + $this->lifetime;
         setcookie($this->name, $value, $options);
     }
 
