@@ -68,8 +68,9 @@ abstract class App
     {
         return static::$response;
     }
-    
-    public static function getWorkDir() {
+
+    public static function getWorkDir()
+    {
         if (!static::$work_dir) {
             static::$work_dir = static::constWorkDir();
         }
@@ -117,14 +118,22 @@ abstract class App
     {
         if (is_null(static::$session)) {
             $storage = new SessionStorageRedis(static::constVarPrefix(), static::redis());
-            static::$session = new Session(getenv('SESSION_NAME') ?: static::constSessionName(), $storage);
-            static::$session->setCookieOptions([
+            $name = getenv('SESSION_NAME') ?: static::constSessionName();
+            $domain = getenv('SESSION_DOMAIN') ?: '';
+            $secure = !empty(getenv('SESSION_SECURE'));
+            $samesite = getenv('SESSION_SAMESITE') ?: 'Lax';
+            static::$session = new Session(
+                new Cookie($name . '_access_token', domain: $domain, secure: $secure, samesite: $samesite),
+                new Cookie($name . '_refresh_token', domain: $domain, secure: $secure, samesite: $samesite),
+                $storage
+            );
+            /*static::$session->setCookieOptions([
                 'path' => getenv('SESSION_PATH'),
                 'domain' => getenv('SESSION_DOMAIN'),
                 'secure' => !empty(getenv('SESSION_SECURE')),
                 'httponly' => !empty(getenv('SESSION_HTTPONLY')),
                 'samesite' => getenv('SESSION_SAMESITE')
-            ]);
+            ]);*/
             if ($admins = getenv('APP_ADMINS')) {
                 static::$session->setAdmins(explode(',', $admins));
             }

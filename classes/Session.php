@@ -7,28 +7,18 @@ class Session
     const SESSION_LIFETIME = 1800;
     const TOKEN_LIFETIME = 2592000;
 
-    private $cookie_session;
-    private $cookie_session_lifetime = self::SESSION_LIFETIME;
-    private $cookie_token;
-    private $cookie_token_lifetime = self::TOKEN_LIFETIME;
+    private $session_lifetime = self::SESSION_LIFETIME;
+    private $refresh_token_lifetime = self::TOKEN_LIFETIME;
     private $cookie_options;
     private $session;
     private $admins = [];
-    private $storage;
 
-    public function __construct(string $cookie_name, SessionStorageInterface $storage)
-    {
-        $this->storage = $storage;
-        $this->cookie_session = $cookie_name . '_access_token';
-        $this->cookie_token = $cookie_name . '_refresh_token';
-        $this->cookie_options = [
-            'path' => '/',
-            'domain' => '',
-            'secure' => false,
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ];
-        $session_cookie = filter_input(INPUT_COOKIE, $this->cookie_session);
+    public function __construct(
+        private Cookie $session_cookie,
+        private Cookie $refresh_token_cookie,
+        private SessionStorageInterface $storage
+    ) {
+        $session_cookie = $this->session_cookie->get();
         if ($session_cookie) {
             $this->session = $this->storage->getSession($session_cookie);
             if (isset($this->session->revoke_token)) {
@@ -42,7 +32,7 @@ class Session
             if ($this->restoreSession()) {
                 return;
             }
-            $this->dropSessionCookie();
+            $this->session_cookie->drop();
             return;
         }
         if ($this->restoreSession()) {
@@ -50,26 +40,15 @@ class Session
         }
     }
 
-    public function setCookieOptions(array $options)
-    {
-        $this->cookie_options = [
-            'path' => empty($options['path'])? '/' : $options['path'],
-            'domain' => empty($options['domain']) ? '' : $options['domain'],
-            'secure' => empty($options['secure']) ? false : boolval($options['secure']),
-            'httponly' => empty($options['httponly']) ? true : boolval($options['httponly']),
-            'samesite' => empty($options['samesite']) ? 'Strict' : $options['samesite']
-        ];
-    }
-
     public function setSessionLifetime(int $session_lifetime)
     {
-        $this->cookie_session_lifetime = $session_lifetime;
+        $this->session_lifetime = $session_lifetime;
         $this->storage->setSessionLifetime($session_lifetime);
     }
 
     public function setTokenLifetime(int $token_lifetime)
     {
-        $this->cookie_token_lifetime = $token_lifetime;
+        $this->refresh_token_lifetime = $token_lifetime;
         $this->storage->setTokenLifetime($token_lifetime);
     }
 
@@ -89,7 +68,7 @@ class Session
         throw new HtmlException('', 403);
     }
 
-    public function memberOf(?array $scope=null): bool
+    public function memberOf(?array $scope = null): bool
     {
         if (is_null($this->session)) {
             return false;
@@ -146,7 +125,7 @@ class Session
 
     private function revokeToken($token)
     {
-        $current_token = filter_input(INPUT_COOKIE, $this->cookie_token);
+        $current_token = $this->session_cookie->get();
         foreach ($this->storage->getRevokeTokens($token) as $revoke_token) {
             if ($revoke_token != $current_token) {
                 $this->revokeToken($revoke_token);
@@ -158,13 +137,13 @@ class Session
 
     private function restoreSession()
     {
-        $token = filter_input(INPUT_COOKIE, $this->cookie_token);
+        $token = $this->refresh_token_cookie->get();
         if (!$token) {
             return false;
         }
         $session = $this->storage->getToken($token);
         if (!$session) {
-            $this->dropTokenCookie();
+            $this->refresh_token_cookie->drop();
             return false;
         }
         if (isset($session->session_lifetime)) {
@@ -179,19 +158,19 @@ class Session
             $this->storage->setToken($token, $session);
         }
         if (!isset($session->class) or !isset($session->validate)) {
-            $this->dropTokenCookie();
+            $this->refresh_token_cookie->drop();
             $this->storage->delToken($token);
             return false;
         }
         $class_name = $session->class;
         if (!class_exists($class_name)) {
-            $this->dropTokenCookie();
+            $this->refresh_token_cookie->drop();
             $this->storage->delToken($token);
             return false;
         }
         $user = $class_name::validate((array)$session->validate);
         if (!$user) {
-            $this->dropTokenCookie();
+            $this->refresh_token_cookie->drop();
             $this->storage->delToken($token);
             return false;
         }
@@ -200,15 +179,15 @@ class Session
         $this->session = (object)['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'revoke_token' => $token, 'refresh_token' => $new_token];
         $this->storage->setSession($session_token, $this->session);
         $this->storage->addRevokeToken($token, $new_token);
-        $this->storage->setToken($new_token, ['revoke_token' => $token, 'class' => get_class($user), 'validate'=>$user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $this->cookie_session_lifetime, 'token_lifetime' => $this->cookie_token_lifetime]);
-        $this->setSessionCookie($session_token);
-        $this->setTokenCookie($new_token);
+        $this->storage->setToken($new_token, ['revoke_token' => $token, 'class' => get_class($user), 'validate' => $user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $this->session_lifetime, 'token_lifetime' => $this->refresh_token_lifetime]);
+        $this->session_cookie->set($session_token, $this->session_lifetime);
+        $this->refresh_token_cookie->set($new_token, $this->refresh_token_lifetime);
         return true;
     }
 
     public function login(UserInterface $user, $session_lifetime = self::SESSION_LIFETIME, $token_lifetime = self::TOKEN_LIFETIME)
     {
-        $old_token = filter_input(INPUT_COOKIE, $this->cookie_token);
+        $old_token = $this->session_cookie->get();
         if ($old_token) {
             $this->revokeToken($old_token);
         }
@@ -218,57 +197,29 @@ class Session
         $token = $this->generateRandomString();
         $this->session = (object)['id' => $user->getId(), 'login' => $user->getLogin(), 'name' => $user->getName(), 'email' => $user->getEmail(), 'scope' => $user->getScope(), 'refresh_token' => $token];
         $this->storage->setSession($session_token, $this->session);
-        $this->storage->setToken($token, ['class' => get_class($user), 'validate'=>$user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $session_lifetime, 'token_lifetime' => $token_lifetime]);
-        $this->setSessionCookie($session_token);
-        $this->setTokenCookie($token);
+        $this->storage->setToken($token, ['class' => get_class($user), 'validate' => $user->getProperties(), 'browser' => getenv('HTTP_USER_AGENT'), 'ip' => getenv('REMOTE_ADDR'), 'session_lifetime' => $session_lifetime, 'token_lifetime' => $token_lifetime]);
+        $this->session_cookie->set($session_token, $this->session_lifetime);
+        $this->refresh_token_cookie->set($token, $this->refresh_token_lifetime);
     }
 
     public function logout()
     {
         $this->session = null;
-        $session_cookie = filter_input(INPUT_COOKIE, $this->cookie_session);
+        $session_cookie = $this->session_cookie->get();
         if ($session_cookie) {
             $this->storage->delSession($session_cookie);
-            $this->dropSessionCookie();
+            $this->session_cookie->drop();
         }
-        $token = filter_input(INPUT_COOKIE, $this->cookie_token);
+        $token = $this->refresh_token_cookie->get();
         if ($token) {
             $this->revokeToken($token);
             $this->storage->delToken($token);
-            $this->dropTokenCookie();
+            $this->refresh_token_cookie->drop();
         }
     }
 
     private function generateRandomString(int $length = 32): string
     {
         return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode(openssl_random_pseudo_bytes($length)));
-    }
-
-    private function setSessionCookie(string $token): void
-    {
-        $options = $this->cookie_options;
-        $options['expires'] = time() + $this->cookie_session_lifetime;
-        setcookie($this->cookie_session, $token, $options);
-    }
-
-    private function dropSessionCookie(): void
-    {
-        $options = $this->cookie_options;
-        $options['expires'] = 1;
-        setcookie($this->cookie_session, '', $options);
-    }
-
-    private function setTokenCookie(string $token): void
-    {
-        $options = $this->cookie_options;
-        $options['expires'] = time() + $this->cookie_token_lifetime;
-        setcookie($this->cookie_token, $token, $options);
-    }
-
-    private function dropTokenCookie(): void
-    {
-        $options = $this->cookie_options;
-        $options['expires'] = 1;
-        setcookie($this->cookie_token, '', $options);
     }
 }
