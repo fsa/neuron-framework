@@ -2,6 +2,9 @@
 
 namespace FSA\Neuron;
 
+use Redis;
+use RedisException;
+
 abstract class App
 {
     const ERR_ACCESS_DENIED = 'Неверное имя пользователя или пароль.';
@@ -14,6 +17,7 @@ abstract class App
     protected static $response;
     protected static $settings;
     protected static $session;
+    protected static $var;
     protected static $work_dir;
 
     /** Префикс для переменных */
@@ -21,7 +25,7 @@ abstract class App
     /** Префикс для Cookie с данными сессии */
     abstract protected static function constSessionName(): string;
     /** Путь до рабочего каталога */
-    abstract public static function constWorkDir(): string;
+    abstract protected static function constWorkDir(): string;
 
     /** Массив с данными для шаблонов */
     protected static function getContext(): ?array
@@ -74,7 +78,7 @@ abstract class App
     public static function getWorkDir()
     {
         if (!static::$work_dir) {
-            static::$work_dir = static::constWorkDir();
+            static::$work_dir = static::constWorkDir() . '/';
         }
         return static::$work_dir;
     }
@@ -103,10 +107,32 @@ abstract class App
         return [static::class, 'sql'];
     }
 
-    public static function redis(): RedisDB
+    public static function redis(): Redis
     {
         if (is_null(static::$redis)) {
-            static::$redis = new RedisDB(getenv('REDIS_URL'));
+            $url = getenv('REDIS_URL');
+            $db = (!$url) ? ['host' => '127.0.0.1'] : parse_url($url);
+            try {
+                $redis = new Redis;
+                $scheme = (isset($db['scheme']) and $db['scheme'] == 'rediss') ? "tls://" : '';
+                $redis->connect($scheme . $db["host"], $db["port"] ?? 6379);
+            } catch (RedisException $ex) {
+                throw new HtmlException('Redis connect failed: ' . $ex->getMessage(), 500);
+            }
+            if (!empty($db["pass"])) {
+                if (empty($db["user"])) {
+                    $result = $redis->auth($db["pass"]);
+                } else {
+                    $result = $redis->auth([$db["user"], $db["pass"]]);
+                }
+                if (!$result) {
+                    throw new HtmlException('Redis auth failed', 500);
+                }
+            }
+            if (!empty($db["path"])) {
+                $redis->select((int)ltrim($db['path'], '/'));
+            }
+            static::$redis = $redis;
         }
         return static::$redis;
     }
@@ -182,30 +208,12 @@ abstract class App
         return static::sql()->fetchKeyPair(static::getEntityClass($name));
     }
 
-    public static function getVar($name)
+    public static function var()
     {
-        return static::redis()->get(static::constVarPrefix() . ':Vars:' . $name);
-    }
-
-    public static function setVar($name, $value)
-    {
-        static::redis()->set(static::constVarPrefix() . ':Vars:' . $name, $value);
-    }
-
-    public static function getVarJson($name, $array = true)
-    {
-        $val = static::getVar($name);
-        return json_decode($val, $array);
-    }
-
-    public static function setVarJson($name, $object)
-    {
-        static::setVar($name, json_encode($object, JSON_UNESCAPED_UNICODE));
-    }
-
-    public static function delVar($name)
-    {
-        return static::redis()->del(static::constVarPrefix() . ':Vars:' . $name);
+        if (!isset(static::$var)) {
+            static::$var = new RedisStorage(static::constVarPrefix() . ':Vars:', static::redisCallback());
+        }
+        return static::$var;
     }
 
     public static function exceptionHandler($ex)
