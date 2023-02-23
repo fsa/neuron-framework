@@ -2,6 +2,8 @@
 
 namespace FSA\Neuron;
 
+use App;
+
 abstract class Controller
 {
     protected $name;
@@ -13,24 +15,58 @@ abstract class Controller
         $this->path = $path;
     }
 
-    abstract function route();
+    public function route()
+    {
+        $reflection = new \ReflectionClass(static::class);
+        foreach ($reflection->getMethods() as $method) {
+            $attr = $method->getAttributes(Route::class);
+            if (!$attr) {
+                continue;
+            }
+            $route = $attr[0]->newInstance();
+            if (!$route->match($this->path)) {
+                continue;
+            }
+            $args = [];
+            foreach ($method->getParameters() as $arg) {
+                $type = $arg->getType();
+                if (is_null($type)) {
+                    $args[] = $route->get($arg->getName());
+                } else {
+                    $args[] = match ((string)$type) {
+                        ResponseHtml::class => $route->getTemplates() ? App::initHtml(...$route->getTemplates()) : App::initHtml(),
+                        ResponseJson::class => App::initJson()
+                    };
+                }
+            }
+            $this->{$method->getName()}(...$args);
+            exit;
+        }
+        App::initHtml()->returnError(404);
+        die;
+    }
 
-    protected function isFileName() {
+    // Устарело, оставлено для совместимости
+    protected function isFileName()
+    {
         return empty($this->path);
     }
 
-    protected function isDirName() {
-        return $this->path==[''];
+    // Устарело, оставлено для совместимости
+    protected function isDirName()
+    {
+        return $this->path == [''];
     }
 
+    // Устарело, оставлено для совместимости
     protected function isPath(string $path): bool
     {
         $parts = explode('/', $path);
         if (sizeof($this->path) != sizeof($parts)) {
             return false;
         }
-        foreach ($parts as $i=>$part) {
-            if(substr($part, 0, 1)=='#') {
+        foreach ($parts as $i => $part) {
+            if (substr($part, 0, 1) == '#') {
                 $name = substr($part, 1);
                 $this->$name = $this->path[$i];
             } else {
