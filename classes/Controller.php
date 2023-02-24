@@ -33,10 +33,7 @@ abstract class Controller
                 if (is_null($type)) {
                     $args[] = $route->get($arg->getName());
                 } else {
-                    $args[] = match ((string)$type) {
-                        ResponseHtml::class => $route->getTemplates() ? App::initHtml(...$route->getTemplates()) : App::initHtml(),
-                        ResponseJson::class => App::initJson()
-                    };
+                    $args[] = App::getObject((string)$type);
                 }
             }
             $this->{$method->getName()}(...$args);

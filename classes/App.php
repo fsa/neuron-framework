@@ -192,6 +192,17 @@ abstract class App
         };
     }
 
+    public static function getObject($type): ?object
+    {
+        return match ($type) {
+            ResponseHtml::class => static::initHtml(),
+            ResponseJson::class => static::initJson(),
+            Session::class => static::session(),
+            VarsStorageInterface::class => static::var(),
+            default => null
+        };
+    }
+
     public static function newEntity(string $name)
     {
         $class = static::getEntityClass($name);
@@ -208,7 +219,7 @@ abstract class App
         return static::sql()->fetchKeyPair(static::getEntityClass($name));
     }
 
-    public static function var()
+    public static function var(): VarsStorageInterface
     {
         if (!isset(static::$var)) {
             static::$var = new RedisStorage(static::constVarPrefix() . ':Vars:', static::redisCallback());
