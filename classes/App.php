@@ -2,6 +2,7 @@
 
 namespace FSA\Neuron;
 
+use Closure;
 use Redis;
 use RedisException;
 
@@ -192,9 +193,9 @@ abstract class App
         };
     }
 
-    public static function getObject($type): ?object
+    public static function container(): Closure
     {
-        return match ($type) {
+        return fn($type) => match ($type) {
             ResponseHtml::class => static::initHtml(),
             ResponseJson::class => static::initJson(),
             Session::class => static::session(),

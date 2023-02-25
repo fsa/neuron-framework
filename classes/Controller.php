@@ -2,7 +2,7 @@
 
 namespace FSA\Neuron;
 
-use App;
+use Closure;
 
 abstract class Controller
 {
@@ -15,7 +15,7 @@ abstract class Controller
         $this->path = $path;
     }
 
-    public function route()
+    public function route(Closure $container)
     {
         $reflection = new \ReflectionClass(static::class);
         foreach ($reflection->getMethods() as $method) {
@@ -33,14 +33,12 @@ abstract class Controller
                 if (is_null($type)) {
                     $args[] = $route->get($arg->getName());
                 } else {
-                    $args[] = App::getObject((string)$type);
+                    $args[] = $container((string)$type);
                 }
             }
             $this->{$method->getName()}(...$args);
             exit;
         }
-        App::initHtml()->returnError(404);
-        die;
     }
 
     // Устарело, оставлено для совместимости
