@@ -3,6 +3,7 @@
 namespace FSA\Neuron;
 
 use Closure;
+use PDO;
 use Redis;
 use RedisException;
 
@@ -198,6 +199,8 @@ abstract class App
         return fn($type) => match ($type) {
             ResponseHtml::class => static::initHtml(),
             ResponseJson::class => static::initJson(),
+            PDO::class => static::sql(),
+            Redis::class => static::redis(),
             Session::class => static::session(),
             VarsStorageInterface::class => static::var(),
             default => null
