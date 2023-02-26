@@ -9,13 +9,13 @@ abstract class Controller
     protected $name;
     protected $path;
 
-    public function __construct(array $path)
+    public function __construct(array $path, protected Closure $container)
     {
         $this->name = array_shift($path);
         $this->path = $path;
     }
 
-    public function route(Closure $container)
+    public function route()
     {
         $reflection = new \ReflectionClass(static::class);
         foreach ($reflection->getMethods() as $method) {
@@ -33,12 +33,18 @@ abstract class Controller
                 if (is_null($type)) {
                     $args[] = $route->get($arg->getName());
                 } else {
-                    $args[] = $container((string)$type);
+                    $args[] = ($this->container)((string)$type);
                 }
             }
             $this->{$method->getName()}(...$args);
             exit;
         }
+    }
+
+    public function next(string $class)
+    {
+        $controller = new $class($this->path, $this->container);
+        $controller->route();
     }
 
     // Устарело, оставлено для совместимости

@@ -9,11 +9,11 @@ class Route
 {
     private $vars = [];
 
-    public function __construct(private $path = '', private ?array $templates = null, private bool $strict = true)
+    public function __construct(private string $path = '', private ?array $templates = null, private bool $strict = true)
     {
     }
 
-    public function match(array $path)
+    public function match(array $path): bool
     {
         if ($this->path == '' and empty($path)) {
             return true;
