@@ -225,6 +225,14 @@ abstract class App
         return static::$var;
     }
 
+    public static function route(string $controller, string $url_path)
+    {
+        $path = explode('/', 'root' . $url_path);
+        $view = new $controller($path, static::container());
+        $view->route();
+        static::initHtml()->returnError(404);
+    }
+
     public static function exceptionHandler($ex)
     {
         $class = get_class($ex);

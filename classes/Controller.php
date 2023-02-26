@@ -43,39 +43,9 @@ abstract class Controller
 
     public function next(string $class)
     {
-        $controller = new $class($this->path, $this->container);
-        $controller->route();
-    }
-
-    // Устарело, оставлено для совместимости
-    protected function isFileName()
-    {
-        return empty($this->path);
-    }
-
-    // Устарело, оставлено для совместимости
-    protected function isDirName()
-    {
-        return $this->path == [''];
-    }
-
-    // Устарело, оставлено для совместимости
-    protected function isPath(string $path): bool
-    {
-        $parts = explode('/', $path);
-        if (sizeof($this->path) != sizeof($parts)) {
-            return false;
+        if (class_exists($class)) {
+            $controller = new $class($this->path, $this->container);
+            $controller->route();
         }
-        foreach ($parts as $i => $part) {
-            if (substr($part, 0, 1) == '#') {
-                $name = substr($part, 1);
-                $this->$name = $this->path[$i];
-            } else {
-                if ($part != $this->path[$i]) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 }
