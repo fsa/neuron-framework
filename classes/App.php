@@ -14,6 +14,10 @@ abstract class App
     const SESSION_LIFETIME = 1800;
     const REFRESH_TOKEN_LIFETIME = 2592000;
 
+    protected static $main_template = \Templates\Main::class;
+    protected static $login_template = \Templates\Login::class;
+    protected static $message_template = \Templates\Message::class;
+
     protected static $db;
     protected static $redis;
     protected static $response;
@@ -35,16 +39,6 @@ abstract class App
         return null;
     }
 
-    /** Классы с шаблонами страниц */
-    protected static function getTemplates(): array
-    {
-        return [
-            \Templates\Main::class,
-            \Templates\Login::class,
-            \Templates\Message::class
-        ];
-    }
-
     /** Инициализация приложения. Может быть расширено. */
     public static function init()
     {
@@ -53,10 +47,10 @@ abstract class App
         }
     }
 
-    public static function initHtml(...$templates): ResponseHtml
+    public static function initHtml(): ResponseHtml
     {
         static::init();
-        static::$response = new ResponseHtml(...array_replace(static::getTemplates(), array_slice($templates, 0, 3)));
+        static::$response = new ResponseHtml(static::$main_template, static::$login_template, static::$message_template);
         if ($context = static::getContext()) {
             static::$response->setContext($context);
         }
@@ -185,25 +179,25 @@ abstract class App
         return new FilterInput($object, $type);
     }
 
+    public function container(): Closure
+    {
+        return fn ($type) => match ($type) {
+            ResponseHtml::class => $this->initHtml(),
+            ResponseJson::class => $this->initJson(),
+            PDO::class => $this->sql(),
+            Redis::class => $this->redis(),
+            Session::class => $this->session(),
+            VarsStorageInterface::class => $this->var(),
+            default => null
+        };
+    }
+
     public static function getEntityClass(string $name): string
     {
         return match ($name) {
             'users' => UserDB\Users::class,
             'groups' => UserDB\Groups::class,
             'scopes' => UserDB\Scopes::class
-        };
-    }
-
-    public static function container(): Closure
-    {
-        return fn($type) => match ($type) {
-            ResponseHtml::class => static::initHtml(),
-            ResponseJson::class => static::initJson(),
-            PDO::class => static::sql(),
-            Redis::class => static::redis(),
-            Session::class => static::session(),
-            VarsStorageInterface::class => static::var(),
-            default => null
         };
     }
 
