@@ -179,15 +179,15 @@ abstract class App
         return new FilterInput($object, $type);
     }
 
-    public function container(): Closure
+    public static function container(): Closure
     {
         return fn ($type) => match ($type) {
-            ResponseHtml::class => $this->initHtml(),
-            ResponseJson::class => $this->initJson(),
-            PDO::class => $this->sql(),
-            Redis::class => $this->redis(),
-            Session::class => $this->session(),
-            VarsStorageInterface::class => $this->var(),
+            ResponseHtml::class => static::initHtml(),
+            ResponseJson::class => static::initJson(),
+            PDO::class => static::sql(),
+            Redis::class => static::redis(),
+            Session::class => static::session(),
+            VarsStorageInterface::class => static::var(),
             default => null
         };
     }
