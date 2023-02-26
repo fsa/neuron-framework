@@ -8,7 +8,7 @@ class PostgreSQL extends PDO
 {
     public function __construct($url)
     {
-        if (empty($url)) {
+        if (!filter_var($url, FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED)) {
             throw new HtmlException('Database is not configured.', 500);
         }
         $db = parse_url($url);
