@@ -30,8 +30,6 @@ abstract class App
     abstract protected static function constVarPrefix(): string;
     /** Префикс для Cookie с данными сессии */
     abstract protected static function constSessionName(): string;
-    /** Путь до рабочего каталога */
-    abstract protected static function constWorkDir(): string;
 
     /** Массив с данными для шаблонов */
     protected static function getContext(): ?array
@@ -71,10 +69,14 @@ abstract class App
         return static::$response;
     }
 
-    public static function getWorkDir()
+    public static function getWorkDir(): string
     {
-        if (!static::$work_dir) {
-            static::$work_dir = static::constWorkDir() . '/';
+        if (!isset(static::$work_dir)) {
+            $r = new \ReflectionClass(static::class);
+            if (!is_file($dir = $r->getFileName())) {
+                throw new HtmlException(sprintf('Cannot auto-detect project dir for kernel of class "%s".', $r->name), 500);
+            }
+            static::$work_dir = \dirname($dir). '/';
         }
         return static::$work_dir;
     }
