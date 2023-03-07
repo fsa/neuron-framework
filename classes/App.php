@@ -76,7 +76,7 @@ abstract class App
             if (!is_file($dir = $r->getFileName())) {
                 throw new HtmlException(sprintf('Cannot auto-detect project dir for kernel of class "%s".', $r->name), 500);
             }
-            static::$work_dir = \dirname($dir). '/';
+            static::$work_dir = \dirname($dir, 2). '/';
         }
         return static::$work_dir;
     }
