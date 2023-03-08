@@ -7,7 +7,7 @@ use PDO;
 use Redis;
 use RedisException;
 
-abstract class App
+abstract class AbstractCore
 {
     const ERR_ACCESS_DENIED = 'Неверное имя пользователя или пароль.';
     const ERR_INTERNAL_SERVER_ERROR = 'Внутренняя ошибка сервера';
@@ -102,7 +102,7 @@ abstract class App
 
     public static function sqlCallback(): callable
     {
-        return [static::class, 'sql'];
+        return static::sql(...);
     }
 
     public static function redis(): Redis
@@ -137,7 +137,7 @@ abstract class App
 
     public static function redisCallback(): callable
     {
-        return [static::class, 'redis'];
+        return static::redis(...);
     }
 
     public static function session(): Session

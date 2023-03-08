@@ -3,6 +3,7 @@
 namespace FSA\Neuron;
 
 use PDO;
+use App\Core;
 
 class User implements UserInterface
 {
@@ -80,7 +81,7 @@ class User implements UserInterface
 
     public static function validate(array $properties): self
     {
-        $user = new self(App::sql());
+        $user = new self(Core::sql());
         return $user->refresh($properties) ? $user : null;
     }
 }
