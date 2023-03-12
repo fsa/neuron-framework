@@ -4,7 +4,6 @@ namespace FSA\Neuron;
 
 class Response
 {
-
     const HTTP_STATUS_CODES = [
         100 => 'Continue',
         101 => 'Switching Protocols',
@@ -44,6 +43,18 @@ class Response
         504 => 'Gateway Time-out',
         505 => 'HTTP Version not supported'
     ];
+    const ERR_INTERNAL_SERVER_ERROR = 'Внутренняя ошибка сервера';
+
+    private static $response;
+
+    public function __construct()
+    {
+        if ($tz = getenv('TZ')) {
+            date_default_timezone_set($tz);
+        }
+        self::$response = $this;
+        set_exception_handler([static::class, 'exceptionHandler']);
+    }
 
     public function redirection($location, int $code = 302)
     {
@@ -51,7 +62,7 @@ class Response
         printf('Location: <a href="%s">%s</a>', $location, $location);
         exit;
     }
-    
+
     public function return($response)
     {
         echo (string)$response;
@@ -68,5 +79,23 @@ class Response
     {
         http_response_code($http_response_code);
         die('<center><h1>' . $http_response_code . ' ' . ($message ?? self::HTTP_STATUS_CODES[$http_response_code] ?? 'Unknown http status code') . '</h1></center>');
+    }
+
+    public static function exceptionHandler($ex)
+    {
+        $class = get_class($ex);
+        $class_parts = explode('\\', $class);
+        if (end($class_parts) == 'UserException') {
+            static::$response->returnError(200, $ex->getMessage());
+        } else if (end($class_parts) == 'HtmlException') {
+            static::$response->returnError($ex->getCode(), $ex->getMessage(), method_exists($ex, 'getDescription') ? $ex->getDescription() : null);
+        } else if (getenv('DEBUG')) {
+            error_log($ex, 0);
+            static::$response->returnError(500, '<pre>' . (string) $ex . '</pre>');
+        } else {
+            error_log($ex, 0);
+            static::$response->returnError(500, self::ERR_INTERNAL_SERVER_ERROR);
+        }
+        exit;
     }
 }

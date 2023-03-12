@@ -4,7 +4,7 @@ namespace FSA\Neuron;
 
 use Redis;
 
-class RedisStorage implements VarsStorageInterface
+class RedisStorage implements VarStorageInterface
 {
     private Redis $redis;
     private $redis_callback;

@@ -2,7 +2,7 @@
 
 namespace FSA\Neuron;
 
-interface VarsStorageInterface
+interface VarStorageInterface
 {
     public function get(string $key): string|null;
     public function set(string $key, string $value, int $lifetime = null): void;

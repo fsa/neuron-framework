@@ -9,7 +9,7 @@ abstract class Controller
     protected $name;
     protected $path;
 
-    public function __construct(array $path, protected Closure $container)
+    public function __construct(array $path, protected Container $container)
     {
         $this->name = array_shift($path);
         $this->path = $path;
@@ -33,7 +33,7 @@ abstract class Controller
                 if (is_null($type)) {
                     $args[] = $route->get($arg->getName());
                 } else {
-                    $args[] = ($this->container)((string)$type);
+                    $args[] = $this->container->get((string)$type);
                 }
             }
             $this->{$method->getName()}(...$args);
@@ -46,6 +46,8 @@ abstract class Controller
         if (class_exists($class)) {
             $controller = new $class($this->path, $this->container);
             $controller->route();
+        } else {
+            throw new HtmlException("Class $class does not exists.", 500);
         }
     }
 }

@@ -20,6 +20,7 @@ class ResponseHtml extends Response
         $this->login_template_name = $login;
         $this->message_template_name = $message;
         $this->header_shown = false;
+        parent::__construct();
     }
 
     public function getTemplate()
@@ -31,35 +32,41 @@ class ResponseHtml extends Response
         return $this->template;
     }
 
-    public function setTemplate(object $template)
+    public function setTemplate(object $template): static
     {
         $this->template = $template;
+        return $this;
     }
 
-    public function setContext(array $context)
+    public function setContext(array $context): static
     {
         $this->context = $context;
+        return $this;
     }
 
-    public function setLastModified(int $timestamp)
+    public function setLastModified(int $timestamp): static
     {
         $this->last_modified = $timestamp;
+        return $this;
     }
 
-    public function setETag(string $etag)
+    public function setETag(string $etag): static
     {
         $this->etag = $etag;
+        return $this;
     }
 
-    public function addHeader(string $header)
+    public function addHeader(string $header): static
     {
         $template = $this->getTemplate();
         $template->header .= $header . PHP_EOL;
+        return $this;
     }
 
-    public function addDescription($description)
+    public function addDescription($description): static
     {
         $this->addHeader("<meta name=\"description\" content=\"$description\">");
+        return $this;
     }
 
     public function getTitle()
