@@ -4,7 +4,7 @@ namespace FSA\Neuron;
 
 class Settings
 {
-    private $settings;
+    private static $settings;
 
     public function __construct(string $filename)
     {
@@ -13,6 +13,6 @@ class Settings
 
     public function get(mixed $name, $default_value = null)
     {
-        return $this->settings[$name] ?? $default_value;
+        return static::$settings[$name] ?? $default_value;
     }
 }
