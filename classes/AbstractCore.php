@@ -79,25 +79,6 @@ abstract class AbstractCore
         return $session;
     }
 
-    /*
-    const ERR_ACCESS_DENIED = 'Неверное имя пользователя или пароль.';
-
-    public static function login($login, $password)
-    {
-        $user = new User(self::sql());
-        if (!$user->login($login, $password)) {
-            self::$response->returnError(401, self::ERR_ACCESS_DENIED);
-            exit;
-        }
-        self::session()->login($user);
-    }
-
-    public static function logout()
-    {
-        self::session()->logout();
-    }
-    */
-
     public static function filterInput(object &$object, int $type = INPUT_POST): FilterInput
     {
         return new FilterInput($object, $type);
