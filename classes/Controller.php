@@ -2,7 +2,7 @@
 
 namespace FSA\Neuron;
 
-use Closure;
+use Exception;
 
 abstract class Controller
 {
@@ -36,7 +36,18 @@ abstract class Controller
                     $args[] = $this->container->get((string)$type);
                 }
             }
-            $this->{$method->getName()}(...$args);
+            try {
+                $this->{$method->getName()}(...$args);
+            } catch (Exception $ex) {
+                foreach ($method->getAttributes(ThrowException::class) as $throw_exception) {
+                    $ex_args = $throw_exception->getArguments();
+                    if ($ex instanceof $ex_args[0]) {
+                        $this->{$ex_args[1]}($ex);
+                        die;
+                    }
+                }
+                throw $ex;
+            }
             exit;
         }
     }
