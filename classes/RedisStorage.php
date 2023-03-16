@@ -50,13 +50,13 @@ class RedisStorage implements VarStorageInterface
 
     public function getJson($key, $array = true)
     {
-        $value = $this->get($key);
+        $value = $this->get($this->prefix . $key);
         return json_decode($value, $array);
     }
 
     public function setJson($key, $object)
     {
-        $this->set($key, json_encode($object, JSON_UNESCAPED_UNICODE));
+        $this->set($this->prefix . $key, json_encode($object, JSON_UNESCAPED_UNICODE));
     }
 
 
@@ -66,7 +66,7 @@ class RedisStorage implements VarStorageInterface
         $redis->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
         $it = NULL;
         $result = [];
-        while ($arr_keys = $redis->scan($it, $search_key)) {
+        while ($arr_keys = $redis->scan($it, $this->prefix . $search_key)) {
             foreach ($arr_keys as $str_key) {
                 $result[] = $str_key;
             }
@@ -80,7 +80,7 @@ class RedisStorage implements VarStorageInterface
         $redis->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
         $it = NULL;
         $count = 0;
-        while ($arr_keys = $redis->scan($it, $search_key)) {
+        while ($arr_keys = $redis->scan($it, $this->prefix . $search_key)) {
             foreach ($arr_keys as $str_key) {
                 $this->redis->del($str_key);
                 $count++;
