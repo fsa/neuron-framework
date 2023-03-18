@@ -2,7 +2,7 @@
 
 namespace FSA\Neuron;
 
-class Login extends Controller
+class LoginController extends Controller
 {
     const ERR_ACCESS_DENIED = 'Неверное имя пользователя или пароль.';
 
