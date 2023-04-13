@@ -42,7 +42,7 @@ abstract class AbstractCore
 
     public static function sql(): PDO
     {
-        return static::container()->get(PDO::class);
+        return static::container()->get(Pgsql::class)->getPDO();
     }
 
     public static function sqlCallback(): callable
@@ -96,15 +96,15 @@ abstract class AbstractCore
     {
         return new Container(
             [
-                PDO::class => fn () => static::getPDO(),
+                Database\Pgsql::class => fn () => new Database\Pgsql(getenv('DATABASE_URL'), getenv('TZ')),
                 Redis::class => fn () => static::getRedis(),
-                Settings::class => fn () => static::getSettings(),
                 VarStorageInterface::class => fn () => static::getVar(),
                 Session::class => fn () => static::getSession(),
                 ResponseHtml::class => fn () => static::getResponseHtml(),
                 ResponseJson::class => fn () => static::getResponseJson()
             ],
-            []
+            [],
+            require static::getWorkDir() . 'settings.php'
         );
     }
 
@@ -119,33 +119,6 @@ abstract class AbstractCore
     public static function getVar(): VarStorageInterface
     {
         return new RedisStorage(static::VAR_PREFIX . ':Vars:', static::redisCallback());
-    }
-
-    protected static function getSettings(): Settings
-    {
-        return new Settings(static::getWorkDir() . 'settings.php');
-    }
-
-    protected static function getPDO(): PDO
-    {
-        $url = getenv('DATABASE_URL');
-        if (!filter_var($url, FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED)) {
-            throw new HtmlException('Database is not configured.', 500);
-        }
-        $db = parse_url($url);
-        $pdo = new PDO(sprintf(
-            "pgsql:host=%s;port=%s;user=%s;password=%s;dbname=%s",
-            $db['host'],
-            $db['port'] ?? 5432,
-            $db['user'],
-            $db['pass'],
-            ltrim($db["path"], "/")
-        ));
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        if ($tz = getenv('TZ')) {
-            $pdo->query("SET TIMEZONE=\"$tz\"");
-        }
-        return $pdo;
     }
 
     protected static function getRedis(): Redis
