@@ -68,11 +68,14 @@ class Container
             $argumentType = $argument->getType()->getName();
             $name = $argument->getName();
             switch($argumentType) {
+                case null:
                 case 'string':
                 case 'int':
                 case 'array':
                     if (isset($this->parameters[$class][$name])) {
                         $args[$name] = $this->parameters[$class][$name];
+                    } else if (isset($this->parameters[$name])) {
+                        $args[$name] = $this->parameters[$name];
                     } else {
                         if($argument->isDefaultValueAvailable()) {
                             $args[$name] = $argument->getDefaultValue();

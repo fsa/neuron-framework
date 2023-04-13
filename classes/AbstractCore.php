@@ -45,23 +45,14 @@ abstract class AbstractCore
         return static::container()->get(Database\Pgsql::class)->getPDO();
     }
 
-    public static function sqlCallback(): callable
-    {
-        return static::sql(...);
-    }
-
     public static function redis(): Redis
     {
-        return static::container()->get(Redis::class);
-    }
-
-    public static function redisCallback(): callable
-    {
-        return static::redis(...);
+        return static::container()->get(Database\Redis::class)->getRedis();
     }
 
     public static function getSession(): Session
     {
+        $redis = static::container()->get(Database\Redis::class);
         $name = getenv('SESSION_NAME') ?: static::SESSION_NAME;
         $domain = getenv('SESSION_DOMAIN') ?: '';
         $secure = !empty(getenv('SESSION_SECURE'));
@@ -69,9 +60,9 @@ abstract class AbstractCore
         $session = new Session(
             new Cookie($name . '_access_token', static::SESSION_LIFETIME, domain: $domain, secure: $secure, samesite: $samesite),
             new Cookie($name . '_refresh_token', static::REFRESH_TOKEN_LIFETIME, domain: $domain, secure: $secure, samesite: $samesite),
-            new TokenStorageRedis(static::redisCallback(), static::VAR_PREFIX . ':Session:Token:', static::SESSION_LIFETIME),
-            new TokenStorageRedis(static::redisCallback(), static::VAR_PREFIX . ':Session:RefreshToken:', static::REFRESH_TOKEN_LIFETIME),
-            new RevokeTokenStorageRedis(static::redisCallback(), static::VAR_PREFIX . ':Session:RevokeToken:', static::REFRESH_TOKEN_LIFETIME)
+            new TokenStorageRedis($redis, static::VAR_PREFIX . ':Session:Token:', static::SESSION_LIFETIME),
+            new TokenStorageRedis($redis, static::VAR_PREFIX . ':Session:RefreshToken:', static::REFRESH_TOKEN_LIFETIME),
+            new RevokeTokenStorageRedis($redis, static::VAR_PREFIX . ':Session:RevokeToken:', static::REFRESH_TOKEN_LIFETIME)
         );
         if ($admins = getenv('APP_ADMINS')) {
             $session->setAdmins(explode(',', $admins));
@@ -97,8 +88,8 @@ abstract class AbstractCore
         return new Container(
             [
                 Database\Pgsql::class => fn () => new Database\Pgsql(getenv('DATABASE_URL'), getenv('TZ')),
-                Redis::class => fn () => static::getRedis(),
-                VarStorageInterface::class => fn () => static::getVar(),
+                Database\Redis::class => fn () => new Database\Redis(getenv('REDIS_URL')),
+                VarStorageInterface::class => fn () => new RedisStorage(static::container()->get(Database\Redis::class), static::VAR_PREFIX . ':Vars:'),
                 Session::class => fn () => static::getSession(),
                 ResponseHtml::class => fn () => static::getResponseHtml(),
                 ResponseJson::class => fn () => static::getResponseJson()
@@ -114,37 +105,5 @@ abstract class AbstractCore
         $view = new $controller($path, static::container());
         $view->route();
         static::container()->get(ResponseHtml::class)->returnError(404);
-    }
-
-    public static function getVar(): VarStorageInterface
-    {
-        return new RedisStorage(static::VAR_PREFIX . ':Vars:', static::redisCallback());
-    }
-
-    protected static function getRedis(): Redis
-    {
-        $url = getenv('REDIS_URL');
-        $db = (!$url) ? ['host' => '127.0.0.1'] : parse_url($url);
-        try {
-            $redis = new Redis();
-            $scheme = (isset($db['scheme']) and $db['scheme'] == 'rediss') ? "tls://" : '';
-            $redis->connect($scheme . $db["host"], $db["port"] ?? 6379);
-        } catch (RedisException $ex) {
-            throw new HtmlException('Redis connect failed: ' . $ex->getMessage(), 500);
-        }
-        if (!empty($db["pass"])) {
-            if (empty($db["user"])) {
-                $result = $redis->auth($db["pass"]);
-            } else {
-                $result = $redis->auth([$db["user"], $db["pass"]]);
-            }
-            if (!$result) {
-                throw new HtmlException('Redis auth failed', 500);
-            }
-        }
-        if (!empty($db["path"])) {
-            $redis->select((int)ltrim($db['path'], '/'));
-        }
-        return $redis;
     }
 }

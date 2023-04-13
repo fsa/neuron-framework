@@ -2,50 +2,30 @@
 
 namespace FSA\Neuron;
 
-use Redis;
-
 class RedisStorage implements VarStorageInterface
 {
-    private Redis $redis;
-    private $redis_callback;
-    private $prefix;
-
-    public function __construct(string $prefix, Redis|callable $redis)
+    public function __construct(private Database\Redis $redis, private string $prefix)
     {
-        if ($redis instanceof Redis) {
-            $this->redis = $redis;
-        } else {
-            $this->redis_callback = $redis;
-        }
-        $this->prefix = $prefix;
-    }
-
-    protected function redis()
-    {
-        if (!isset($this->redis)) {
-            $this->redis = ($this->redis_callback)();
-        }
-        return $this->redis;
     }
 
     public function get(string $key): string|null
     {
-        $value = $this->redis()->get($this->prefix . $key);
+        $value = $this->redis->get($this->prefix . $key);
         return $value ?: null;
     }
 
     public function set(string $key, string $value, int $lifetime = null): void
     {
         if ($lifetime) {
-            $this->redis()->setEx($this->prefix . $key, $lifetime, $value);
+            $this->redis->setEx($this->prefix . $key, $lifetime, $value);
         } else {
-            $this->redis()->set($this->prefix . $key, $value);
+            $this->redis->set($this->prefix . $key, $value);
         }
     }
 
     public function del($key): void
     {
-        $this->redis()->del($this->prefix . $key);
+        $this->redis->del($this->prefix . $key);
     }
 
     public function getJson($key, $array = true)
@@ -62,11 +42,10 @@ class RedisStorage implements VarStorageInterface
 
     public function searchKeys($search_key)
     {
-        $redis = $this->redis();
-        $redis->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
+        $this->redis->setOption(\Redis::OPT_SCAN, \Redis::SCAN_RETRY);
         $it = NULL;
         $result = [];
-        while ($arr_keys = $redis->scan($it, $this->prefix . $search_key)) {
+        while ($arr_keys = $this->redis->scan($it, $this->prefix . $search_key)) {
             foreach ($arr_keys as $str_key) {
                 $result[] = $str_key;
             }
@@ -76,11 +55,10 @@ class RedisStorage implements VarStorageInterface
 
     public function deleteKeys($search_key)
     {
-        $redis = $this->redis();
-        $redis->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
+        $this->redis->setOption(\Redis::OPT_SCAN, \Redis::SCAN_RETRY);
         $it = NULL;
         $count = 0;
-        while ($arr_keys = $redis->scan($it, $this->prefix . $search_key)) {
+        while ($arr_keys = $this->redis->scan($it, $this->prefix . $search_key)) {
             foreach ($arr_keys as $str_key) {
                 $this->redis->del($str_key);
                 $count++;

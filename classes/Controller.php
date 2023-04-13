@@ -30,10 +30,13 @@ abstract class Controller
             $args = [];
             foreach ($method->getParameters() as $arg) {
                 $type = $arg->getType();
-                if (is_null($type)) {
-                    $args[] = $route->get($arg->getName());
-                } else {
-                    $args[] = $this->container->get((string)$type);
+                switch ($type) {
+                    case null:
+                    case 'string':
+                        $args[] = $route->get($arg->getName());
+                        break;
+                    default:
+                        $args[] = $this->container->get((string)$type);
                 }
             }
             try {
