@@ -42,7 +42,7 @@ abstract class AbstractCore
 
     public static function sql(): PDO
     {
-        return static::container()->get(Pgsql::class)->getPDO();
+        return static::container()->get(Database\Pgsql::class)->getPDO();
     }
 
     public static function sqlCallback(): callable
