@@ -4,7 +4,7 @@ namespace FSA\Neuron\Database;
 
 use PDO;
 
-class Pgsql extends PDO
+class Pgsql
 {
     private $pdo;
 
