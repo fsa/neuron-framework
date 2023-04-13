@@ -37,19 +37,20 @@ class Pgsql extends PDO
         return $this->pdo;
     }
 
-    public function executeQuery(string $query, null|string|array $param = null)
+    public function executeQuery(string $query, null|string|array $param = null): PgsqlResult
     {
         if (is_null($param)) {
             $stmt = $this->getPDO()->query($query);
+            $success = true;
         } else {
             if (is_string($param)) {
                 $param = [$param];
             }
             $stmt = $this->getPDO()->prepare($query);
-            $stmt->execute($param);
+            $success = $stmt->execute($param);
         }
 
-        return new PgsqlResult($stmt);
+        return new PgsqlResult($stmt, $success);
     }
 
     public function insert(string $table, array $values, string $index = 'id')
@@ -80,9 +81,8 @@ class Pgsql extends PDO
     public function fetchEntity(string $class, string|int $id_value): ?object
     {
         $id = $this->getEntityId($class);
-        $stmt = $this->getPDO()->prepare('SELECT * FROM ' . $this->getEntityTable($class) . ' WHERE ' . $id . '=?');
-        $stmt->execute([$id_value]);
-        return $stmt->fetchObject($class) ?: null;
+
+        return $this->executeQuery('SELECT * FROM ' . $this->getEntityTable($class) . ' WHERE ' . $id . '=?', [$id_value])->fetchObject($class);
     }
 
     public function insertEntity(object &$object): string|int
@@ -93,8 +93,9 @@ class Pgsql extends PDO
         if (is_null($properties[$index])) {
             unset($properties[$index]);
         }
-        $id = $this->insert($this->getEntityTable($class_name), $this->getEntityProperties($object), $index);
+        $id = $this->insert($this->getEntityTable($class_name), $properties, $index);
         $object->$index = $id;
+
         return $id;
     }
 
@@ -117,6 +118,7 @@ class Pgsql extends PDO
         if (count($attr) == 0) {
             throw new EntityException('Table name not defined');
         }
+
         return $attr[0]->newInstance()->name;
     }
 
@@ -140,9 +142,16 @@ class Pgsql extends PDO
             $attr = $property->getAttributes(Mapping\Column::class);
             if ($attr) {
                 $name = $property->getName();
-                $properties[$name] = $object->$name;
+                switch ($property->getType()) {
+                    case 'bool':
+                        $properties[$name] = $object->$name ? 't' : 'f';
+                        break;
+                    default:
+                        $properties[$name] = $object->$name;
+                }
             }
         }
+
         return $properties;
     }
 }
