@@ -30,13 +30,13 @@ class RedisStorage implements VarStorageInterface
 
     public function getJson($key, $array = true)
     {
-        $value = $this->get($this->prefix . $key);
+        $value = $this->redis->get($this->prefix . $key);
         return json_decode($value, $array);
     }
 
     public function setJson($key, $object)
     {
-        $this->set($this->prefix . $key, json_encode($object, JSON_UNESCAPED_UNICODE));
+        $this->redis->set($this->prefix . $key, json_encode($object, JSON_UNESCAPED_UNICODE));
     }
 
 
