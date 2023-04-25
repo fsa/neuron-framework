@@ -72,9 +72,8 @@ class User implements UserInterface
         return $this->scope;
     }
 
-    public static function validate(array $properties): self
+    public function validate(array $properties): bool
     {
-        $user = new self(Core::container()->get(Pgsql::class));
-        return $user->refresh($properties) ? $user : null;
+        return $this->refresh($properties);
     }
 }

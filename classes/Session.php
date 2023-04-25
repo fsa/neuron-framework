@@ -12,7 +12,8 @@ class Session
         private Cookie $refresh_token_cookie,
         private TokenStorageInterface $session_token,
         private TokenStorageInterface $refresh_token,
-        private RevokeTokenStorageInterface $revoke_token
+        private RevokeTokenStorageInterface $revoke_token,
+        private Container $container
     ) {
         $session_cookie = $this->session_cookie->get();
         if ($session_cookie) {
@@ -146,8 +147,8 @@ class Session
             $this->refresh_token->del($token);
             return false;
         }
-        $user = $class_name::validate((array)$session->validate);
-        if (!$user) {
+        $user = $this->container->get($class_name);
+        if (!$user->validate((array)$session->validate)) {
             $this->refresh_token_cookie->drop();
             $this->refresh_token->del($token);
             return false;

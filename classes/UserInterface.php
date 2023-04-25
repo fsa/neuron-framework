@@ -4,7 +4,7 @@ namespace FSA\Neuron;
 
 interface UserInterface
 {
-    static function validate(array $properties): self;
+    function validate(array $properties): bool;
     function getProperties(): array;
     function getId();
     function getLogin(): string;

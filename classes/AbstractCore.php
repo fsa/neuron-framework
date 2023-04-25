@@ -4,7 +4,6 @@ namespace FSA\Neuron;
 
 use PDO;
 use Redis;
-use RedisException;
 
 abstract class AbstractCore
 {
@@ -62,7 +61,8 @@ abstract class AbstractCore
             new Cookie($name . '_refresh_token', static::REFRESH_TOKEN_LIFETIME, domain: $domain, secure: $secure, samesite: $samesite),
             new TokenStorageRedis($redis, static::VAR_PREFIX . ':Session:Token:', static::SESSION_LIFETIME),
             new TokenStorageRedis($redis, static::VAR_PREFIX . ':Session:RefreshToken:', static::REFRESH_TOKEN_LIFETIME),
-            new RevokeTokenStorageRedis($redis, static::VAR_PREFIX . ':Session:RevokeToken:', static::REFRESH_TOKEN_LIFETIME)
+            new RevokeTokenStorageRedis($redis, static::VAR_PREFIX . ':Session:RevokeToken:', static::REFRESH_TOKEN_LIFETIME),
+            static::container()
         );
         if ($admins = getenv('APP_ADMINS')) {
             $session->setAdmins(explode(',', $admins));
