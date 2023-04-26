@@ -2,9 +2,6 @@
 
 namespace FSA\Neuron;
 
-use App\Core;
-use FSA\Neuron\Database\Pgsql;
-
 class User implements UserInterface
 {
     public $uuid;
