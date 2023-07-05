@@ -32,6 +32,7 @@ abstract class Controller
                 $type = $arg->getType();
                 switch ($type) {
                     case null:
+                    case 'int':
                     case 'string':
                         $args[] = $route->get($arg->getName());
                         break;
@@ -53,6 +54,29 @@ abstract class Controller
             }
             exit;
         }
+    }
+
+    public function call(string $name, array $args = [])
+    {
+        if (!method_exists($this, $name)) {
+            throw new HtmlException("Method $name does not exists.", 500);
+        }
+        $reflection = new \ReflectionClass(static::class);
+        $method = $reflection->getMethod($name);
+        $args = [];
+        foreach ($method->getParameters() as $arg) {
+            $type = $arg->getType();
+            switch ($type) {
+                case null:
+                case 'int':
+                case 'string':
+                    $args[] = $args[$arg->getName()];
+                    break;
+                default:
+                    $args[] = $this->container->get((string)$type);
+            }
+        }
+        call_user_func([$this, $name], $args);
     }
 
     public function next(string $class)
