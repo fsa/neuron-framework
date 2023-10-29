@@ -56,7 +56,7 @@ abstract class Controller
         }
     }
 
-    public function call(string $name, array $args = [])
+    public function call(string $name, array $call_args = [])
     {
         if (!method_exists($this, $name)) {
             throw new HtmlException("Method $name does not exists.", 500);
@@ -70,13 +70,13 @@ abstract class Controller
                 case null:
                 case 'int':
                 case 'string':
-                    $args[] = $args[$arg->getName()];
+                    $args[] = $call_args[$arg->getName()];
                     break;
                 default:
                     $args[] = $this->container->get((string)$type);
             }
         }
-        call_user_func([$this, $name], $args);
+        $this->$name(...$args);
     }
 
     public function next(string $class)
