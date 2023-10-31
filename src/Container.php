@@ -3,8 +3,9 @@
 namespace FSA\Neuron;
 
 use InvalidArgumentException;
+use Psr\Container\ContainerInterface;
 
-class Container
+class Container implements ContainerInterface
 {
 
     protected $instances = [];
@@ -39,17 +40,18 @@ class Container
             }
             return $this->instances[$id];
         }
-        return isset($this->dependencies[$id]) ? $this->dependencies[$id]() : $this->prepareObject($id);
+        if (isset($this->dependencies[$id])) {
+            return $this->dependencies[$id]();
+        }
+        if (class_exists($id)) {
+            return $this->prepareObject($id);
+        }
+        return $this->parameters[$id] ?? null;
     }
 
     public function has(string $id): bool
     {
-        return isset($this->singletons[$id]) or isset($this->dependencies[$id]) or class_exists($id);
-    }
-
-    public function getParameter(mixed $name, $default_value = null)
-    {
-        return $this->parameters[$name] ?? $default_value;
+        return isset($this->singletons[$id]) or isset($this->dependencies[$id]) or class_exists($id) or isset($this->parameters[$id]);
     }
 
     private function prepareObject(string $class): object
@@ -67,7 +69,7 @@ class Container
         foreach ($constructArguments as $argument) {
             $argumentType = $argument->getType()->getName();
             $name = $argument->getName();
-            switch($argumentType) {
+            switch ($argumentType) {
                 case null:
                 case 'string':
                 case 'int':
@@ -77,7 +79,7 @@ class Container
                     } else if (isset($this->parameters[$name])) {
                         $args[$name] = $this->parameters[$name];
                     } else {
-                        if($argument->isDefaultValueAvailable()) {
+                        if ($argument->isDefaultValueAvailable()) {
                             $args[$name] = $argument->getDefaultValue();
                         } else {
                             throw new InvalidArgumentException("'$class' required '$name' constructor argument.");
